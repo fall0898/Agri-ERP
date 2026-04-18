@@ -24,7 +24,7 @@ interface NavGroup {
   imports: [RouterLink, RouterLinkActive, CommonModule],
   template: `
     <aside [class]="collapsed() ? 'w-16' : 'w-64'"
-           class="hidden lg:flex flex-col h-full transition-all duration-300 overflow-hidden shrink-0"
+           class="flex flex-col h-full transition-all duration-300 overflow-hidden shrink-0"
            style="background: #0f172a; border-right: 1px solid rgba(255,255,255,0.06);">
 
       <!-- Logo -->
