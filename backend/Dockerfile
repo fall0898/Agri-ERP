@@ -8,13 +8,14 @@ RUN apk add --no-cache \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
+    libzip-dev \
     zip \
     unzip \
     git \
     oniguruma-dev \
     icu-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql mbstring gd exif pcntl bcmath intl opcache
+    && docker-php-ext-install pdo pdo_mysql mbstring gd exif pcntl bcmath intl opcache zip
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
