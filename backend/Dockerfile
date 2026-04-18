@@ -1,50 +1,58 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.2-cli-bullseye
 
-# Extensions PHP requises
-RUN apk add --no-cache \
+# Évite les prompts interactifs
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Extensions système + PHP en une seule couche
+RUN apt-get update && apt-get install -y \
     nginx \
     supervisor \
     curl \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    libzip-dev \
-    zip \
-    unzip \
     git \
-    oniguruma-dev \
-    icu-dev \
+    unzip \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libzip-dev \
+    libicu-dev \
+    libonig-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql mbstring gd exif pcntl bcmath intl opcache zip
+    && docker-php-ext-install \
+        pdo \
+        pdo_mysql \
+        mbstring \
+        gd \
+        exif \
+        pcntl \
+        bcmath \
+        intl \
+        opcache \
+        zip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Dépendances d'abord (cache layer)
+# Dépendances Composer (layer cacheable séparé)
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
 # Code source
 COPY . .
 
-# Permissions
+# Permissions storage
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
-# Post-install
-RUN composer run-script post-autoload-dump || true \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+# Discover packages (sans scripts qui nécessitent .env)
+RUN composer dump-autoload --optimize
 
-# Nginx config
-COPY docker/nginx.conf /etc/nginx/nginx.conf
+# Script de démarrage : migrations + cache + serveur
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh
 
-# Supervisor (nginx + php-fpm + queue worker)
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+EXPOSE 8080
 
-EXPOSE 80
-
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/start.sh"]
