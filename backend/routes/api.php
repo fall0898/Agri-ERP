@@ -138,6 +138,7 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
         Route::get('/comparaison', [Tenant\FinanceController::class, 'comparaison'])->middleware('App\Http\Middleware\CheckPlanLimit:excel');
         Route::get('/rentabilite-culture/{id}', [Tenant\FinanceController::class, 'rentabiliteCulture'])->middleware('App\Http\Middleware\CheckPlanLimit:excel');
         Route::get('/export-excel', [Tenant\FinanceController::class, 'exportExcel'])->middleware('App\Http\Middleware\CheckPlanLimit:excel');
+        Route::get('/rapport-pdf', [Tenant\FinanceController::class, 'rapportPdf'])->middleware('App\Http\Middleware\CheckPlanLimit:excel');
     });
 
     // --- Employés ---

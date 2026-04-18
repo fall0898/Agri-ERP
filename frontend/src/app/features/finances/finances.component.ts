@@ -25,7 +25,9 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
             <option value="annee">Cette année</option>
             <option value="tout">Tout</option>
           </select>
-          <button (click)="imprimerRapport()" class="btn-secondary h-9 px-4 text-sm">🖨️ PDF</button>
+          <button (click)="exportPdf()" [disabled]="exportingPdf()" class="btn-secondary h-9 px-4 text-sm">
+            {{ exportingPdf() ? '...' : '📄 PDF' }}
+          </button>
           <button (click)="exportExcel()" [disabled]="exportingExcel()" class="btn-secondary h-9 px-4 text-sm">
             {{ exportingExcel() ? '...' : '📊 Excel' }}
           </button>
@@ -199,6 +201,7 @@ export class FinancesComponent implements OnInit {
 
   loading = signal(true);
   exportingExcel = signal(false);
+  exportingPdf = signal(false);
   resume = signal<any>(null);
   parCulture = signal<any[]>([]);
   parChamp = signal<any[]>([]);
@@ -263,20 +266,41 @@ export class FinancesComponent implements OnInit {
     }
   }
 
-  imprimerRapport(): void { window.print(); }
+  private buildQuery(): string {
+    const { debut, fin } = this.plage();
+    const params = new URLSearchParams();
+    if (debut) params.set('date_debut', debut);
+    if (fin)   params.set('date_fin', fin);
+    const qs = params.toString();
+    return qs ? `?${qs}` : '';
+  }
+
+  private downloadBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
 
   exportExcel(): void {
     this.exportingExcel.set(true);
-    const { debut, fin } = this.plage();
-    this.api.getBlob(`/api/finance/export-excel?date_debut=${debut}&date_fin=${fin}`).subscribe({
+    this.api.getBlob(`/api/finance/export-excel${this.buildQuery()}`).subscribe({
       next: blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `finances-agri-erp.xlsx`; a.click();
-        URL.revokeObjectURL(url);
+        this.downloadBlob(blob, `rapport-finances-agri-erp.xlsx`);
         this.exportingExcel.set(false);
       },
-      error: () => { this.exportingExcel.set(false); this.notif.error('Erreur lors de l\'export.'); },
+      error: () => { this.exportingExcel.set(false); this.notif.error('Erreur lors de l\'export Excel.'); },
+    });
+  }
+
+  exportPdf(): void {
+    this.exportingPdf.set(true);
+    this.api.getBlob(`/api/finance/rapport-pdf${this.buildQuery()}`).subscribe({
+      next: blob => {
+        this.downloadBlob(blob, `rapport-finances-agri-erp.pdf`);
+        this.exportingPdf.set(false);
+      },
+      error: () => { this.exportingPdf.set(false); this.notif.error('Erreur lors de l\'export PDF.'); },
     });
   }
 }
