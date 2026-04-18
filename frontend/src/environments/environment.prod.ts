@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://YOUR_BACKEND_URL_HERE',
+  apiBaseUrl: 'https://agri-erp-production.up.railway.app',
+  sentryDsn: 'YOUR_SENTRY_DSN',
 };
