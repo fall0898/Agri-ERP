@@ -24,9 +24,11 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $phone = '7' . fake()->numerify('########');   // 9 chiffres, ex: 770809798
         return [
             'nom'                     => fake()->name(),
-            'email'                   => fake()->unique()->safeEmail(),
+            'telephone'               => fake()->unique()->numerify('7########'),
+            'email'                   => $phone . '@agri-erp.local',
             'password'                => static::$password ??= Hash::make('password'),
             'remember_token'          => Str::random(10),
             'role'                    => 'lecteur',
