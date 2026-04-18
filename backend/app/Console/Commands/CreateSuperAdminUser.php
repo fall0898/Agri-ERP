@@ -43,9 +43,11 @@ class CreateSuperAdminUser extends Command
                 'role'            => 'super_admin',
                 'organisation_id' => $org->id,
                 'est_actif'       => true,
+                'password'        => Hash::make($password),
             ]);
-            $this->info("✓ Utilisateur existant mis à jour en super_admin : #{$existing->id} — {$existing->nom}");
+            $this->info("✓ Compte mis à jour — super_admin : #{$existing->id} — {$existing->nom}");
             $this->line("  Téléphone : {$telephone}");
+            $this->line("  Mot de passe : {$password}");
             $this->line("  Organisation : {$org->nom} (#{$org->id})");
             return self::SUCCESS;
         }
