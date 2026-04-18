@@ -30,7 +30,8 @@ class AuthService
             ]);
         }
 
-        if ($user->organisation && !$user->organisation->est_active) {
+        // Les super_admins ne sont jamais bloqués par le statut de leur organisation
+        if ($user->role !== 'super_admin' && $user->organisation && !$user->organisation->est_active) {
             throw ValidationException::withMessages([
                 'telephone' => ['Votre compte est lié à une organisation désactivée. Contactez le support.'],
             ]);
