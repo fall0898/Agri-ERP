@@ -24,7 +24,7 @@ WORKDIR /var/www
 
 # Dépendances d'abord (cache layer)
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
 
 # Code source
 COPY . .
