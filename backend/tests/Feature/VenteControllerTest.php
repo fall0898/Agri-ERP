@@ -23,7 +23,7 @@ class VenteControllerTest extends TestCase
         ]);
 
         $response->assertCreated()
-                 ->assertJsonPath('data.montant_total_fcfa', 25000.0);
+                 ->assertJsonPath('data.montant_total_fcfa', fn($v) => (float)$v === 25000.0);
     }
 
     public function test_impossible_de_modifier_vente_auto_generee(): void

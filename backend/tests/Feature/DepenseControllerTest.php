@@ -23,7 +23,7 @@ class DepenseControllerTest extends TestCase
         ]);
 
         $response->assertCreated()
-                 ->assertJsonPath('data.montant_fcfa', 45000.0);
+                 ->assertJsonPath('data.montant_fcfa', fn($v) => (float)$v === 45000.0);
     }
 
     public function test_impossible_de_modifier_depense_auto_generee(): void

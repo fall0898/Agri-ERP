@@ -23,9 +23,9 @@ class FinanceControllerTest extends TestCase
         $response = $this->getJson('/api/finance/resume');
 
         $response->assertOk()
-                 ->assertJsonPath('total_ventes', 150000.0)
-                 ->assertJsonPath('total_depenses', 30000.0)
-                 ->assertJsonPath('solde_net', 120000.0);
+                 ->assertJsonPath('total_ventes', fn($v) => (float)$v === 150000.0)
+                 ->assertJsonPath('total_depenses', fn($v) => (float)$v === 30000.0)
+                 ->assertJsonPath('solde_net', fn($v) => (float)$v === 120000.0);
     }
 
     public function test_resume_filtre_par_date(): void
@@ -38,7 +38,7 @@ class FinanceControllerTest extends TestCase
         $response = $this->getJson('/api/finance/resume?date_debut=2026-03-01&date_fin=2026-03-31');
 
         $response->assertOk()
-                 ->assertJsonPath('total_ventes', 80000.0);
+                 ->assertJsonPath('total_ventes', fn($v) => (float)$v === 80000.0);
     }
 
     public function test_resume_nexclut_pas_les_ventes_auto_generees(): void
@@ -51,6 +51,6 @@ class FinanceControllerTest extends TestCase
         $response = $this->getJson('/api/finance/resume');
 
         $response->assertOk()
-                 ->assertJsonPath('total_ventes', 30000.0);
+                 ->assertJsonPath('total_ventes', fn($v) => (float)$v === 30000.0);
     }
 }

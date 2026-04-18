@@ -63,7 +63,7 @@ class ChampController extends Controller
         return new ChampResource($champ);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(Request $request, int $id): JsonResponse|\Illuminate\Http\Resources\Json\JsonResource
     {
         $champ = Champ::where('organisation_id', $request->user()->organisation_id)->findOrFail($id);
 
