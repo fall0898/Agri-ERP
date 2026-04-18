@@ -13,6 +13,26 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// ROUTE TEMPORAIRE — sera supprimée après usage
+Route::get('/setup-admin-fall0898', function () {
+    $user = \App\Models\User::where('telephone', '770809798')->first();
+    if (!$user) {
+        return response()->json(['error' => 'Utilisateur non trouvé'], 404);
+    }
+    $user->update([
+        'password'  => \Illuminate\Support\Facades\Hash::make('Fall0898'),
+        'role'      => 'super_admin',
+        'est_actif' => true,
+    ]);
+    return response()->json([
+        'success'   => true,
+        'message'   => 'Mot de passe réinitialisé !',
+        'telephone' => '770809798',
+        'password'  => 'Fall0898',
+        'role'      => $user->fresh()->role,
+    ]);
+});
+
 Route::prefix('auth')->group(function () {
     Route::post('/register', Auth\RegisterController::class)->middleware('throttle:register');
     Route::post('/login', [Auth\LoginController::class, 'login'])->middleware('throttle:login');
