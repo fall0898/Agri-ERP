@@ -1,8 +1,14 @@
 import { Component, signal, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+
+const phoneValidator: ValidatorFn = (control: AbstractControl) => {
+  const raw = (control.value || '').replace(/[\s\-\.\(\)]/g, '');
+  const local = raw.replace(/^(\+?221|00221)/, '');
+  return /^[0-9]{8,9}$/.test(local) ? null : { invalidPhone: true };
+};
 
 @Component({
   selector: 'app-login',
@@ -73,11 +79,18 @@ import { NotificationService } from '../../core/services/notification.service';
           <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5" autocomplete="off">
 
             <div>
-              <label class="form-label">Adresse email</label>
-              <input type="email" formControlName="email" class="form-input"
-                     placeholder="votre@email.com" autocomplete="off"/>
-              @if (form.get('email')?.invalid && form.get('email')?.touched) {
-                <p class="form-error">Adresse email invalide.</p>
+              <label class="form-label">Numéro de téléphone</label>
+              <div class="flex gap-2">
+                <span class="form-input w-20 shrink-0 flex items-center justify-center text-neutral-500 text-sm font-medium cursor-default select-none" style="background:#f5f5f4;">+221</span>
+                <input type="tel" formControlName="telephone" class="form-input flex-1"
+                       placeholder="77 000 00 00" autocomplete="tel" inputmode="numeric"/>
+              </div>
+              @if (form.get('telephone')?.touched) {
+                @if (form.get('telephone')?.errors?.['required']) {
+                  <p class="form-error">Numéro de téléphone requis.</p>
+                } @else if (form.get('telephone')?.errors?.['invalidPhone']) {
+                  <p class="form-error">Numéro invalide — ex: 770809798</p>
+                }
               }
             </div>
 
@@ -140,8 +153,8 @@ export class LoginComponent {
   errorMsg = signal('');
 
   form = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', Validators.required],
+    telephone: ['', [Validators.required, phoneValidator]],
+    password:  ['', Validators.required],
   });
 
   submit(): void {
@@ -156,7 +169,7 @@ export class LoginComponent {
       },
       error: err => {
         this.loading.set(false);
-        this.errorMsg.set(err.error?.errors?.email?.[0] || 'Identifiants incorrects.');
+        this.errorMsg.set(err.error?.errors?.telephone?.[0] || 'Numéro ou mot de passe incorrect.');
       },
     });
   }

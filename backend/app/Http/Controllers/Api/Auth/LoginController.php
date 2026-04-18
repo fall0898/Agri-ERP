@@ -16,15 +16,15 @@ class LoginController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
+            'telephone' => ['required', 'string'],
+            'password'  => 'required|string',
         ], [
-            'email.required' => "L'adresse email est obligatoire.",
-            'password.required' => 'Le mot de passe est obligatoire.',
+            'telephone.required' => 'Le numéro de téléphone est obligatoire.',
+            'password.required'  => 'Le mot de passe est obligatoire.',
         ]);
 
         try {
-            $result = $this->authService->login($request->only('email', 'password'));
+            $result = $this->authService->login($request->only('telephone', 'password'));
 
             return response()->json([
                 'token' => $result['token'],

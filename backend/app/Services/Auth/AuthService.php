@@ -10,23 +10,29 @@ class AuthService
 {
     public function login(array $credentials): array
     {
-        $user = User::where('email', $credentials['email'])->first();
+        // normalise le numéro : strip non-digits, supprime préfixe 221
+        $phone = preg_replace('/[^0-9]/', '', $credentials['telephone']);
+        if (strlen($phone) > 9 && str_starts_with($phone, '221')) {
+            $phone = substr($phone, 3);
+        }
+
+        $user = User::where('telephone', $phone)->first();
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Les identifiants fournis sont incorrects.'],
+                'telephone' => ['Numéro de téléphone ou mot de passe incorrect.'],
             ]);
         }
 
         if (!$user->est_actif) {
             throw ValidationException::withMessages([
-                'email' => ['Votre compte est désactivé. Contactez votre administrateur.'],
+                'telephone' => ['Votre compte est désactivé. Contactez votre administrateur.'],
             ]);
         }
 
         if ($user->organisation && !$user->organisation->est_active) {
             throw ValidationException::withMessages([
-                'email' => ['Votre compte est lié à une organisation désactivée. Contactez le support.'],
+                'telephone' => ['Votre compte est lié à une organisation désactivée. Contactez le support.'],
             ]);
         }
 

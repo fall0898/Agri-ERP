@@ -1,5 +1,5 @@
 import { Component, signal, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -15,6 +15,13 @@ function passwordMatch(control: AbstractControl) {
   }
   return null;
 }
+
+// Valide les numéros West Africa : 8-9 chiffres après suppression du préfixe pays
+const phoneValidator: ValidatorFn = (control: AbstractControl) => {
+  const raw = (control.value || '').replace(/[\s\-\.\(\)]/g, '');
+  const local = raw.replace(/^(\+?221|00221)/, '');
+  return /^[0-9]{8,9}$/.test(local) ? null : { invalidPhone: true };
+};
 
 @Component({
   selector: 'app-register',
@@ -88,11 +95,20 @@ function passwordMatch(control: AbstractControl) {
             </div>
 
             <div>
-              <label class="form-label">Adresse email *</label>
-              <input type="email" formControlName="email" class="form-input" placeholder="vous@email.com" autocomplete="off"/>
-              @if (f['email'].invalid && f['email'].touched) {
-                <p class="form-error">Email invalide.</p>
+              <label class="form-label">Numéro de téléphone *</label>
+              <div class="flex gap-2">
+                <span class="form-input w-20 shrink-0 flex items-center justify-center text-neutral-500 text-sm font-medium cursor-default select-none" style="background:#f5f5f4;">+221</span>
+                <input type="tel" formControlName="telephone" class="form-input flex-1"
+                       placeholder="77 000 00 00" autocomplete="tel" inputmode="numeric"/>
+              </div>
+              @if (f['telephone'].touched) {
+                @if (f['telephone'].errors?.['required']) {
+                  <p class="form-error">Numéro de téléphone requis.</p>
+                } @else if (f['telephone'].errors?.['invalidPhone']) {
+                  <p class="form-error">Numéro invalide — ex: 770809798</p>
+                }
               }
+              <p class="text-xs text-neutral-400 mt-1">Saisissez votre numéro sans l'indicatif pays</p>
             </div>
 
             <div>
@@ -111,17 +127,6 @@ function passwordMatch(control: AbstractControl) {
                   <option [value]="pays.code">{{ pays.nom }}</option>
                 }
               </select>
-              @if (f['pays'].invalid && f['pays'].touched) {
-                <p class="form-error">Pays requis.</p>
-              }
-            </div>
-
-            <div>
-              <label class="form-label">Numéro de téléphone *</label>
-              <input type="tel" formControlName="telephone" class="form-input" placeholder="+221 77 000 00 00" autocomplete="tel"/>
-              @if (f['telephone'].invalid && f['telephone'].touched) {
-                <p class="form-error">Numéro de téléphone requis.</p>
-              }
             </div>
 
             <div>
@@ -211,13 +216,12 @@ export class RegisterComponent {
   ];
 
   form = this.fb.group({
-    nom: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    nom_organisation: ['', Validators.required],
-    pays: ['', Validators.required],
-    telephone: ['', Validators.required],
-    password: ['', [Validators.required, Validators.minLength(8)]],
-    password_confirmation: ['', Validators.required],
+    nom:                  ['', Validators.required],
+    telephone:            ['', [Validators.required, phoneValidator]],
+    nom_organisation:     ['', Validators.required],
+    pays:                 [''],
+    password:             ['', [Validators.required, Validators.minLength(8)]],
+    password_confirmation:['', Validators.required],
   }, { validators: passwordMatch });
 
   get f() { return this.form.controls; }

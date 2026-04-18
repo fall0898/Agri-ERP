@@ -15,22 +15,29 @@ class TenantService
         return DB::transaction(function () use ($data) {
             $slug = $this->generateUniqueSlug($data['nom_organisation']);
 
+            $phone = preg_replace('/[^0-9]/', '', $data['telephone']);
+            // strip country prefix 221 if present → 9-digit local number
+            if (strlen($phone) > 9 && str_starts_with($phone, '221')) {
+                $phone = substr($phone, 3);
+            }
+
             $organisation = Organisation::create([
-                'nom' => $data['nom_organisation'],
-                'slug' => $slug,
-                'email_contact' => $data['email'],
-                'telephone' => $data['telephone'] ?? null,
-                'devise' => $data['devise'] ?? 'FCFA',
-                'plan' => 'gratuit',
+                'nom'           => $data['nom_organisation'],
+                'slug'          => $slug,
+                'email_contact' => null,
+                'telephone'     => $phone,
+                'devise'        => $data['devise'] ?? 'FCFA',
+                'plan'          => 'gratuit',
             ]);
 
             $user = User::create([
                 'organisation_id' => $organisation->id,
-                'nom' => $data['nom'],
-                'email' => $data['email'],
-                'password' => $data['password'],
-                'role' => 'admin',
-                'est_actif' => true,
+                'nom'             => $data['nom'],
+                'email'           => $phone . '@agri-erp.local',
+                'telephone'       => $phone,
+                'password'        => $data['password'],
+                'role'            => 'admin',
+                'est_actif'       => true,
             ]);
 
             TenantCree::dispatch($organisation, $user);
