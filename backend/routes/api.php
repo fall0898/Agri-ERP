@@ -239,5 +239,11 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
         Route::get('/tenants/{id}', [Admin\TenantController::class, 'show']);
         Route::patch('/tenants/{id}/activer', [Admin\TenantController::class, 'toggleActif']);
         Route::get('/stats', [Admin\StatsController::class, 'index']);
+
+        Route::get('/users', [Admin\UserController::class, 'index']);
+        Route::post('/users', [Admin\UserController::class, 'store']);
+        Route::put('/users/{id}', [Admin\UserController::class, 'update']);
+        Route::patch('/users/{id}/activer', [Admin\UserController::class, 'toggleActif']);
+        Route::delete('/users/{id}', [Admin\UserController::class, 'destroy']);
     });
 });

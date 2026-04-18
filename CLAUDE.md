@@ -110,8 +110,9 @@ Array.isArray(res) ? res : res.data?.data ?? res.data ?? []
   - Intrant link removal: `DELETE /api/utilisations-intrants/{id}` (admin-only) — removes a `UtilisationIntrant` junction record
   - Financements individuels: `GET /api/financements` (liste globale), `POST /api/employes/{id}/financements` (créer + génère dépense auto), `POST /api/financements/{id}/rembourser` (rembourser + génère vente auto), `DELETE /api/financements/{id}` — admin-only
   - Admin-only (role `admin` or `super_admin`): all write operations (POST/PUT/DELETE) plus `PATCH /api/taches/{id}/statut` — lecteurs cannot toggle task status
-  - Import CSV: `GET /api/import/template/{type}` (all authenticated users), `POST /api/import/{type}` (admin-only + plan-gated `import`). Types: `champs`, `cultures`, `stocks`, `depenses`, `ventes`
+  - Import CSV: `GET /api/import/template/{type}` (all authenticated users), `GET /api/import/status/{id}` (poll async import job), `POST /api/import/{type}` (admin-only + plan-gated `import`). Types: `champs`, `cultures`, `stocks`, `depenses`, `ventes`
   - Super-admin-only: `GET /api/admin/tenants`, `GET /api/admin/tenants/{id}`, `PATCH /api/admin/tenants/{id}/activer`, `GET /api/admin/stats`
+  - Super-admin user management: `GET /api/admin/users`, `POST /api/admin/users`, `PUT /api/admin/users/{id}`, `PATCH /api/admin/users/{id}/activer` (toggle `est_actif`), `DELETE /api/admin/users/{id}` — managed by `Admin\UserController`, bypasses tenant scope
 
 ### Middleware Chain (Authenticated Routes)
 
