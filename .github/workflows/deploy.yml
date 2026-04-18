@@ -1,13 +1,13 @@
-name: Deploy Agri-ERP
+name: CI/CD Agri-ERP
 
 on:
   push:
     branches: [master]
 
 jobs:
-  # ── Backend → Railway ──────────────────────────────────────
-  deploy-backend:
-    name: Deploy Backend (Railway)
+  # ── Backend tests (Railway déploie automatiquement) ────────
+  test-backend:
+    name: Test Backend
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -20,7 +20,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, gd, pdo_mysql, intl
+          extensions: mbstring, gd, pdo_mysql, intl, zip
 
       - name: Install dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
@@ -30,12 +30,7 @@ jobs:
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
-
-      - name: Deploy to Railway
-        uses: railwayapp/railway-github-action@v1
-        with:
-          railway_token: ${{ secrets.RAILWAY_TOKEN }}
-          service: backend
+          APP_KEY: base64:szYIU2lbJrpOfoavrN8ufJD/M9nps+l7xDa8NG/OZMQ=
 
   # ── Frontend → Vercel ─────────────────────────────────────
   deploy-frontend:
