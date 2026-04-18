@@ -30,13 +30,15 @@ import { CommonModule } from '@angular/common';
         </div>
         <!-- CTA -->
         <div class="flex items-center gap-3">
-          <a routerLink="/connexion" class="hidden sm:block text-sm font-medium px-4 py-2 rounded-xl transition-all"
-             [style.color]="scrolled()?'#44403c':'rgba(255,255,255,.8)'"
-             [style.background]="scrolled()?'#f5f5f4':'rgba(255,255,255,.1)'">Connexion</a>
+          <a routerLink="/connexion" class="text-sm font-medium px-4 py-2 rounded-xl transition-all"
+             [style.color]="scrolled()?'#44403c':'rgba(255,255,255,.85)'"
+             [style.background]="scrolled()?'#f5f5f4':'rgba(255,255,255,.12)'"
+             [style.border]="scrolled()?'1px solid #e5e5e4':'1px solid rgba(255,255,255,.2)'">Connexion</a>
           <a routerLink="/inscription"
-             class="inline-flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl text-white transition-all"
+             class="inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-xl text-white transition-all"
              style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px -2px rgba(22,163,74,.45);">
-            Essai gratuit
+            <span class="hidden sm:inline">Essai gratuit</span>
+            <span class="sm:hidden">Essai</span>
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a>
         </div>
@@ -44,18 +46,19 @@ import { CommonModule } from '@angular/common';
     </nav>
 
     <!-- ══════════ URGENCY BAR ══════════ -->
-    <div class="fixed top-16 inset-x-0 z-40 flex items-center justify-center gap-3 py-2 text-xs font-semibold text-white"
+    <div class="fixed top-16 inset-x-0 z-40 flex items-center justify-center gap-2 py-1.5 text-xs font-semibold text-white"
          style="background:linear-gradient(90deg,#166534,#15803d);border-bottom:1px solid rgba(255,255,255,.1);">
       <span class="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse inline-block shrink-0"></span>
-      🌾 Offre de lancement — Prix garanti à vie pour les 50 premiers inscrits · Il reste
-      <span class="px-2 py-0.5 rounded-md font-bold" style="background:rgba(255,255,255,.2);">23 places</span>
+      <span class="hidden sm:inline">🌾 Offre de lancement — Prix garanti à vie pour les 50 premiers inscrits · Il reste</span>
+      <span class="sm:hidden">🌾 Offre de lancement · Il reste</span>
+      <span class="px-2 py-0.5 rounded-md font-bold whitespace-nowrap" style="background:rgba(255,255,255,.2);">23 places</span>
     </div>
 
     <!-- ══════════ HERO ══════════ -->
     <section class="relative min-h-screen flex items-center overflow-hidden pt-24">
       <div class="absolute inset-0">
         <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1800&q=85&fit=crop" alt="" class="w-full h-full object-cover"/>
-        <div class="absolute inset-0" style="background:linear-gradient(135deg,rgba(5,46,22,.95) 0%,rgba(15,79,36,.83) 45%,rgba(15,46,22,.62) 100%);"></div>
+        <div class="absolute inset-0" style="background:linear-gradient(120deg,rgba(5,46,22,.82) 0%,rgba(10,50,25,.58) 40%,rgba(0,15,5,.22) 100%);"></div>
         <div class="absolute inset-0 opacity-10" style="background-image:linear-gradient(rgba(255,255,255,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.15) 1px,transparent 1px);background-size:60px 60px;"></div>
       </div>
       <div class="absolute top-1/3 right-1/4 w-80 h-80 rounded-full opacity-15 animate-float pointer-events-none" style="background:radial-gradient(circle,#22c55e,transparent);filter:blur(60px);"></div>
@@ -561,7 +564,7 @@ import { CommonModule } from '@angular/common';
     <section class="relative py-28 overflow-hidden">
       <div class="absolute inset-0">
         <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1600&q=85&fit=crop" alt="" class="w-full h-full object-cover"/>
-        <div class="absolute inset-0" style="background:linear-gradient(135deg,rgba(5,46,22,.95),rgba(15,79,36,.88));"></div>
+        <div class="absolute inset-0" style="background:linear-gradient(135deg,rgba(5,46,22,.82),rgba(15,79,36,.70));"></div>
         <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 20% 50%,#4ade80,transparent 55%),radial-gradient(circle at 80% 50%,#22c55e,transparent 55%);"></div>
       </div>
       <div class="relative z-10 text-center max-w-2xl mx-auto px-5 lg:px-8">
