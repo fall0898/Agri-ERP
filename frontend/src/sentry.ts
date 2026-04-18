@@ -10,7 +10,7 @@
 import * as Sentry from '@sentry/angular';
 import { environment } from './environments/environment';
 
-if (environment.production && environment.sentryDsn) {
+if (environment.production && environment.sentryDsn && !environment.sentryDsn.startsWith('YOUR_')) {
   Sentry.init({
     dsn: environment.sentryDsn,
     environment: 'production',
