@@ -117,6 +117,14 @@ function passwordMatch(control: AbstractControl) {
             </div>
 
             <div>
+              <label class="form-label">Numéro de téléphone *</label>
+              <input type="tel" formControlName="telephone" class="form-input" placeholder="+221 77 000 00 00" autocomplete="tel"/>
+              @if (f['telephone'].invalid && f['telephone'].touched) {
+                <p class="form-error">Numéro de téléphone requis.</p>
+              }
+            </div>
+
+            <div>
               <label class="form-label">Mot de passe</label>
               <div class="relative">
                 <input [type]="showPassword() ? 'text' : 'password'" formControlName="password"
@@ -207,6 +215,7 @@ export class RegisterComponent {
     email: ['', [Validators.required, Validators.email]],
     nom_organisation: ['', Validators.required],
     pays: ['', Validators.required],
+    telephone: ['', Validators.required],
     password: ['', [Validators.required, Validators.minLength(8)]],
     password_confirmation: ['', Validators.required],
   }, { validators: passwordMatch });
