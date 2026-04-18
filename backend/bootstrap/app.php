@@ -13,8 +13,16 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: ['api/*']);
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Sentry — capture toutes les exceptions en production
+        $exceptions->report(function (\Throwable $e) {
+            if (app()->bound('sentry') && app()->isProduction()) {
+                app('sentry')->captureException($e);
+            }
+        });
+
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
             if ($request->is('api/*')) {
                 return response()->json(['message' => 'Non authentifié.'], 401);

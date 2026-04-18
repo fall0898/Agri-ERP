@@ -115,8 +115,8 @@ PROMPT;
 
         // Stocker l'image
         $file = $request->file('image');
-        $path = $file->store("organisations/{$orgId}/diagnostics", 'public');
-        $imageUrl = Storage::url($path);
+        $path = $file->store("organisations/{$orgId}/diagnostics", 'r2');
+        $imageUrl = Storage::disk('r2')->url($path);
 
         // Encoder en base64 pour Claude
         $imageData    = base64_encode(file_get_contents($file->getRealPath()));

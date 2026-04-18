@@ -160,12 +160,12 @@ class CultureController extends Controller
         $file = $request->file('fichier');
         $type = str_contains($file->getMimeType(), 'video') ? 'video' : 'photo';
 
-        $path = $file->store("organisations/{$request->user()->organisation_id}/medias", 'public');
+        $path = $file->store("organisations/{$request->user()->organisation_id}/medias", 'r2');
 
         $media = Media::create([
             'culture_id' => $culture->id,
             'type' => $type,
-            'fichier_url' => Storage::url($path),
+            'fichier_url' => Storage::disk('r2')->url($path),
             'fichier_nom' => $file->getClientOriginalName(),
             'taille_octets' => $file->getSize(),
             'description' => $request->description,
