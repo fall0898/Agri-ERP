@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { AuthResponse, User, Organisation } from '../models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -22,28 +23,30 @@ export class AuthService {
   readonly isSuperAdmin = computed(() => this._user()?.role === 'super_admin');
   readonly organisation = computed(() => this._user()?.organisation ?? null);
 
+  private readonly base = environment.apiBaseUrl;
+
   constructor(private http: HttpClient, private router: Router) {}
 
   login(credentials: { email: string; password: string }): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>('/api/auth/login', credentials).pipe(
+    return this.http.post<AuthResponse>(`${this.base}/api/auth/login`, credentials).pipe(
       tap(res => this.setSession(res))
     );
   }
 
   register(data: any): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>('/api/auth/register', data).pipe(
+    return this.http.post<AuthResponse>(`${this.base}/api/auth/register`, data).pipe(
       tap(res => this.setSession(res))
     );
   }
 
   logout(): void {
-    this.http.post('/api/auth/logout', {}).subscribe();
+    this.http.post(`${this.base}/api/auth/logout`, {}).subscribe();
     this.clearSession();
     this.router.navigate(['/']);
   }
 
   refreshUser(): Observable<User> {
-    return this.http.get<User>('/api/auth/user').pipe(
+    return this.http.get<User>(`${this.base}/api/auth/user`).pipe(
       tap(user => {
         this._user.set(user);
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
@@ -52,7 +55,7 @@ export class AuthService {
   }
 
   updateProfile(data: Partial<User>): Observable<User> {
-    return this.http.put<User>('/api/auth/user', data).pipe(
+    return this.http.put<User>(`${this.base}/api/auth/user`, data).pipe(
       tap(user => {
         this._user.set(user);
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
