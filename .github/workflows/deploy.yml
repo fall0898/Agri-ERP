@@ -22,7 +22,7 @@ jobs:
           extensions: mbstring, gd, pdo_mysql, intl, zip
 
       - name: Install dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction
+        run: composer install --optimize-autoloader --no-interaction
 
       - name: Run tests
         run: php artisan test --env=testing
