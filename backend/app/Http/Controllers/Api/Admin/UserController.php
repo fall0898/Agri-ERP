@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Organisation;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,21 +23,24 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'nom'             => 'required|string|max:100',
-            'email'           => 'required|email|unique:users,email',
-            'password'        => 'required|string|min:8',
+            'telephone'       => 'required|string|max:30|unique:users,telephone',
+            'password'        => 'required|string|min:6',
             'role'            => 'required|in:super_admin,admin,lecteur',
             'organisation_id' => 'nullable|exists:organisations,id',
-            'telephone'       => 'nullable|string|max:20',
         ]);
+
+        // Auto-generate email from telephone
+        $email = $validated['telephone'] . '@agri-erp.local';
 
         $user = User::create([
             'nom'             => $validated['nom'],
-            'email'           => $validated['email'],
+            'telephone'       => $validated['telephone'],
+            'email'           => $email,
             'password'        => Hash::make($validated['password']),
             'role'            => $validated['role'],
             'organisation_id' => $validated['organisation_id'] ?? null,
-            'telephone'       => $validated['telephone'] ?? null,
             'est_actif'       => true,
+            'onboarding_complete' => true,
         ]);
 
         return response()->json($user->load('organisation:id,nom,plan'), 201);
@@ -50,17 +52,22 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'nom'             => 'sometimes|string|max:100',
-            'email'           => 'sometimes|email|unique:users,email,' . $id,
-            'password'        => 'sometimes|nullable|string|min:8',
+            'telephone'       => 'sometimes|string|max:30|unique:users,telephone,' . $id,
+            'password'        => 'sometimes|nullable|string|min:6',
             'role'            => 'sometimes|in:super_admin,admin,lecteur',
             'organisation_id' => 'sometimes|nullable|exists:organisations,id',
-            'telephone'       => 'sometimes|nullable|string|max:20',
+            'est_actif'       => 'sometimes|boolean',
         ]);
 
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
+        }
+
+        // Update email if telephone changed
+        if (isset($validated['telephone'])) {
+            $validated['email'] = $validated['telephone'] . '@agri-erp.local';
         }
 
         $user->update($validated);

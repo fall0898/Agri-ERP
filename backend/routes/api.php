@@ -238,6 +238,7 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
     */
     Route::middleware('App\Http\Middleware\CheckRole:super_admin')->prefix('admin')->group(function () {
         Route::get('/tenants', [Admin\TenantController::class, 'index']);
+        Route::post('/tenants', [Admin\TenantController::class, 'store']);
         Route::get('/tenants/{id}', [Admin\TenantController::class, 'show']);
         Route::patch('/tenants/{id}/activer', [Admin\TenantController::class, 'toggleActif']);
         Route::get('/stats', [Admin\StatsController::class, 'index']);

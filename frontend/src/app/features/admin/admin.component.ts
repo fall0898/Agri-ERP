@@ -116,7 +116,7 @@ interface AdminUser {
 
       <!-- ===== ONGLET ORGANISATIONS ===== -->
       @if (onglet() === 'organisations') {
-        <div class="card py-3 flex items-center gap-3 flex-wrap">
+        <div class="flex items-center gap-3 flex-wrap">
           <input type="text" [value]="recherche" (input)="onRecherche($event)"
                  placeholder="Rechercher une organisation..."
                  class="form-input text-sm h-9 py-0 flex-1 min-w-48" />
@@ -131,6 +131,10 @@ interface AdminUser {
             <option value="pro">Pro</option>
             <option value="entreprise">Entreprise</option>
           </select>
+          <button (click)="ouvrirModalOrg()"
+                  class="btn-primary text-sm px-4 py-2 rounded-lg flex items-center gap-2 whitespace-nowrap">
+            + Nouvelle organisation
+          </button>
         </div>
 
         <div class="card p-0 overflow-hidden">
@@ -259,7 +263,6 @@ interface AdminUser {
                     <tr class="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
                       <td class="py-3 px-4">
                         <div class="font-semibold text-neutral-900">{{ u.nom }}</div>
-                        <div class="text-xs text-neutral-400">{{ u.email }}</div>
                         @if (u.telephone) {
                           <div class="text-xs text-neutral-400">{{ u.telephone }}</div>
                         }
@@ -312,7 +315,7 @@ interface AdminUser {
                                   [class.text-red-600]="u.est_actif"
                                   [class.bg-green-50]="!u.est_actif"
                                   [class.text-green-600]="!u.est_actif">
-                            {{ togglingUser() === u.id ? '...' : (u.est_actif ? 'Bloquer' : 'Débloquer') }}
+                            {{ togglingUser() === u.id ? '...' : (u.est_actif ? 'Bloquer' : 'Activer') }}
                           </button>
                           <button (click)="supprimerUser(u)"
                                   class="text-xs px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors">
@@ -343,10 +346,8 @@ interface AdminUser {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" (click)="fermerModalUser()">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg" (click)="$event.stopPropagation()">
           <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-neutral-100">
-            <h2 class="text-lg font-semibold text-neutral-900">
-              {{ userEdite() ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}
-            </h2>
-            <button (click)="fermerModalUser()" class="text-neutral-400 hover:text-neutral-600 text-xl leading-none">×</button>
+            <h2 class="text-lg font-semibold text-neutral-900">{{ titreModalUser() }}</h2>
+            <button (click)="fermerModalUser()" class="text-neutral-400 hover:text-neutral-600 text-2xl leading-none">×</button>
           </div>
 
           <form [formGroup]="formUser" (ngSubmit)="sauvegarderUser()" class="px-6 py-5 space-y-4">
@@ -356,12 +357,18 @@ interface AdminUser {
                 <input formControlName="nom" type="text" class="form-input" placeholder="Ex: Mamadou Diallo" />
               </div>
               <div class="col-span-2">
-                <label class="form-label">Email *</label>
-                <input formControlName="email" type="email" class="form-input" placeholder="email@exemple.com" />
+                <label class="form-label">Téléphone * <span class="text-neutral-400 font-normal">(identifiant de connexion)</span></label>
+                <div class="flex gap-2">
+                  <span class="flex items-center px-3 bg-neutral-100 border border-neutral-200 rounded-lg text-neutral-600 text-sm">+221</span>
+                  <input formControlName="telephone" type="tel" class="form-input flex-1"
+                         placeholder="77 000 0000" />
+                </div>
               </div>
               <div class="col-span-2">
-                <label class="form-label">{{ userEdite() ? 'Nouveau mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe *' }}</label>
-                <input formControlName="password" type="password" class="form-input" placeholder="Min. 8 caractères" />
+                <label class="form-label">
+                  {{ userEdite() ? 'Nouveau mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe *' }}
+                </label>
+                <input formControlName="password" type="password" class="form-input" placeholder="Min. 6 caractères" />
               </div>
               <div>
                 <label class="form-label">Rôle *</label>
@@ -370,10 +377,6 @@ interface AdminUser {
                   <option value="admin">Admin</option>
                   <option value="super_admin">Super Admin</option>
                 </select>
-              </div>
-              <div>
-                <label class="form-label">Téléphone</label>
-                <input formControlName="telephone" type="text" class="form-input" placeholder="+221 77 000 0000" />
               </div>
               <div class="col-span-2">
                 <label class="form-label">Organisation</label>
@@ -404,6 +407,86 @@ interface AdminUser {
         </div>
       </div>
     }
+
+    <!-- ===== MODAL ORGANISATION ===== -->
+    @if (modalOrg()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" (click)="fermerModalOrg()">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg" (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-neutral-100">
+            <h2 class="text-lg font-semibold text-neutral-900">Nouvelle organisation</h2>
+            <button (click)="fermerModalOrg()" class="text-neutral-400 hover:text-neutral-600 text-2xl leading-none">×</button>
+          </div>
+
+          <form [formGroup]="formOrg" (ngSubmit)="sauvegarderOrg()" class="px-6 py-5 space-y-4">
+
+            <p class="text-xs text-neutral-500 bg-neutral-50 px-3 py-2 rounded-lg">
+              Informations de l'organisation
+            </p>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="col-span-2">
+                <label class="form-label">Nom de l'organisation *</label>
+                <input formControlName="nom" type="text" class="form-input" placeholder="Ex: Ferme Diallo" />
+              </div>
+              <div>
+                <label class="form-label">Plan *</label>
+                <select formControlName="plan" class="form-input">
+                  <option value="gratuit">Gratuit (7 jours)</option>
+                  <option value="pro">Pro (1 an)</option>
+                  <option value="entreprise">Entreprise</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Pays</label>
+                <input formControlName="pays" type="text" class="form-input" placeholder="Sénégal" />
+              </div>
+              <div class="col-span-2">
+                <label class="form-label">Email de contact</label>
+                <input formControlName="email_contact" type="email" class="form-input" placeholder="contact@exemple.com" />
+              </div>
+            </div>
+
+            <div class="border-t border-neutral-100 pt-4">
+              <p class="text-xs text-neutral-500 bg-neutral-50 px-3 py-2 rounded-lg mb-4">
+                Compte administrateur (optionnel — vous pourrez en créer un après)
+              </p>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                  <label class="form-label">Nom de l'admin</label>
+                  <input formControlName="admin_nom" type="text" class="form-input" placeholder="Ex: Mamadou Diallo" />
+                </div>
+                <div class="col-span-2">
+                  <label class="form-label">Téléphone de l'admin <span class="text-neutral-400">(identifiant connexion)</span></label>
+                  <div class="flex gap-2">
+                    <span class="flex items-center px-3 bg-neutral-100 border border-neutral-200 rounded-lg text-neutral-600 text-sm">+221</span>
+                    <input formControlName="admin_telephone" type="tel" class="form-input flex-1" placeholder="77 000 0000" />
+                  </div>
+                </div>
+                <div class="col-span-2">
+                  <label class="form-label">Mot de passe admin <span class="text-neutral-400">(défaut: password)</span></label>
+                  <input formControlName="admin_password" type="password" class="form-input" placeholder="Min. 6 caractères" />
+                </div>
+              </div>
+            </div>
+
+            @if (erreurOrg()) {
+              <p class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ erreurOrg() }}</p>
+            }
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" (click)="fermerModalOrg()"
+                      class="px-4 py-2 text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 text-neutral-700">
+                Annuler
+              </button>
+              <button type="submit" [disabled]="savingOrg()"
+                      class="btn-primary px-5 py-2 text-sm rounded-lg disabled:opacity-60">
+                {{ savingOrg() ? 'Création...' : 'Créer' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
   `,
 })
 export class AdminComponent implements OnInit {
@@ -422,18 +505,34 @@ export class AdminComponent implements OnInit {
   togglingUser = signal<number | null>(null);
   rechercheUser = '';
 
+  // Modal utilisateur
   modalUser = signal(false);
   userEdite = signal<AdminUser | null>(null);
   savingUser = signal(false);
   erreurUser = signal('');
+  titreModalUser = computed(() => this.userEdite() ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur');
 
   formUser = this.fb.group({
-    nom: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    password: [''],
-    role: ['lecteur', Validators.required],
-    telephone: [''],
+    nom:             ['', Validators.required],
+    telephone:       ['', Validators.required],
+    password:        [''],
+    role:            ['lecteur', Validators.required],
     organisation_id: [null as number | null],
+  });
+
+  // Modal organisation
+  modalOrg = signal(false);
+  savingOrg = signal(false);
+  erreurOrg = signal('');
+
+  formOrg = this.fb.group({
+    nom:             ['', Validators.required],
+    plan:            ['gratuit', Validators.required],
+    pays:            ['Sénégal'],
+    email_contact:   [''],
+    admin_nom:       [''],
+    admin_telephone: [''],
+    admin_password:  [''],
   });
 
   recherche = '';
@@ -447,10 +546,10 @@ export class AdminComponent implements OnInit {
       const q = this.recherche.toLowerCase();
       list = list.filter(t =>
         t.nom.toLowerCase().includes(q) ||
-        t.users?.some(u => u.email.toLowerCase().includes(q) || u.nom.toLowerCase().includes(q))
+        t.users?.some(u => u.nom.toLowerCase().includes(q))
       );
     }
-    if (this.filtreStatut === 'active') list = list.filter(t => t.est_active);
+    if (this.filtreStatut === 'active')   list = list.filter(t => t.est_active);
     if (this.filtreStatut === 'inactive') list = list.filter(t => !t.est_active);
     if (this.filtrePlan) list = list.filter(t => t.plan === this.filtrePlan);
     return list;
@@ -461,8 +560,8 @@ export class AdminComponent implements OnInit {
     const q = this.rechercheUser.toLowerCase();
     return this.users().filter(u =>
       u.nom.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q) ||
-      u.organisation?.nom.toLowerCase().includes(q)
+      (u.telephone ?? '').includes(q) ||
+      (u.organisation?.nom ?? '').toLowerCase().includes(q)
     );
   });
 
@@ -506,29 +605,27 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  // ── Utilisateur ───────────────────────────────────────────────────────────
   ouvrirModalUser(user: AdminUser | null): void {
     this.userEdite.set(user);
     this.erreurUser.set('');
     this.formUser.reset({
-      nom: user?.nom ?? '',
-      email: user?.email ?? '',
-      password: '',
-      role: user?.role ?? 'lecteur',
-      telephone: user?.telephone ?? '',
+      nom:             user?.nom ?? '',
+      telephone:       user?.telephone ?? '',
+      password:        '',
+      role:            user?.role ?? 'lecteur',
       organisation_id: user?.organisation?.id ?? null,
     });
     if (!user) {
-      this.formUser.get('password')!.setValidators([Validators.required, Validators.minLength(8)]);
+      this.formUser.get('password')!.setValidators([Validators.required, Validators.minLength(6)]);
     } else {
-      this.formUser.get('password')!.setValidators([Validators.minLength(8)]);
+      this.formUser.get('password')!.setValidators([Validators.minLength(6)]);
     }
     this.formUser.get('password')!.updateValueAndValidity();
     this.modalUser.set(true);
   }
 
-  fermerModalUser(): void {
-    this.modalUser.set(false);
-  }
+  fermerModalUser(): void { this.modalUser.set(false); }
 
   sauvegarderUser(): void {
     if (this.formUser.invalid) return;
@@ -537,10 +634,9 @@ export class AdminComponent implements OnInit {
 
     const val = this.formUser.value;
     const payload: any = {
-      nom: val.nom,
-      email: val.email,
-      role: val.role,
-      telephone: val.telephone || null,
+      nom:             val.nom,
+      telephone:       val.telephone,
+      role:            val.role,
       organisation_id: val.organisation_id || null,
     };
     if (val.password) payload['password'] = val.password;
@@ -561,9 +657,10 @@ export class AdminComponent implements OnInit {
         this.fermerModalUser();
       },
       error: err => {
-        const msg = err?.error?.message ?? err?.error?.errors
-          ? Object.values(err.error.errors).flat().join(' ')
-          : 'Une erreur est survenue.';
+        const errors = err?.error?.errors;
+        const msg = errors
+          ? Object.values(errors).flat().join(' ')
+          : (err?.error?.message ?? 'Une erreur est survenue.');
         this.erreurUser.set(msg as string);
         this.savingUser.set(false);
       },
@@ -591,6 +688,53 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  // ── Organisation ──────────────────────────────────────────────────────────
+  ouvrirModalOrg(): void {
+    this.erreurOrg.set('');
+    this.formOrg.reset({ nom: '', plan: 'gratuit', pays: 'Sénégal', email_contact: '', admin_nom: '', admin_telephone: '', admin_password: '' });
+    this.modalOrg.set(true);
+  }
+
+  fermerModalOrg(): void { this.modalOrg.set(false); }
+
+  sauvegarderOrg(): void {
+    if (this.formOrg.invalid) return;
+    this.savingOrg.set(true);
+    this.erreurOrg.set('');
+
+    const val = this.formOrg.value;
+    const payload: any = {
+      nom:           val.nom,
+      plan:          val.plan,
+      pays:          val.pays || null,
+      email_contact: val.email_contact || null,
+    };
+    if (val.admin_telephone) {
+      payload['admin_nom']       = val.admin_nom || 'Admin';
+      payload['admin_telephone'] = val.admin_telephone;
+      payload['admin_password']  = val.admin_password || 'password';
+    }
+
+    this.api.post<any>('/api/admin/tenants', payload).subscribe({
+      next: res => {
+        const org = res.organisation;
+        this.tenants.update(list => [{ ...org, users: [] }, ...list]);
+        this.savingOrg.set(false);
+        this.fermerModalOrg();
+        if (res.admin) this.chargerUsers();
+      },
+      error: err => {
+        const errors = err?.error?.errors;
+        const msg = errors
+          ? Object.values(errors).flat().join(' ')
+          : (err?.error?.message ?? 'Une erreur est survenue.');
+        this.erreurOrg.set(msg as string);
+        this.savingOrg.set(false);
+      },
+    });
+  }
+
+  // ── Tenant actif toggle ───────────────────────────────────────────────────
   toggleTenantActif(tenant: Tenant): void {
     this.toggling.set(tenant.id);
     this.api.patch<any>(`/api/admin/tenants/${tenant.id}/activer`, {}).subscribe({
@@ -624,10 +768,10 @@ export class AdminComponent implements OnInit {
   }
 
   planColor(plan: string): string {
-    return { gratuit: '#6b7280', pro: '#3b82f6', entreprise: '#8b5cf6' }[plan] ?? '#6b7280';
+    return ({ gratuit: '#6b7280', pro: '#3b82f6', entreprise: '#8b5cf6' } as any)[plan] ?? '#6b7280';
   }
 
   roleLabel(role: string): string {
-    return { super_admin: 'Super Admin', admin: 'Admin', lecteur: 'Lecteur' }[role] ?? role;
+    return ({ super_admin: 'Super Admin', admin: 'Admin', lecteur: 'Lecteur' } as any)[role] ?? role;
   }
 }
