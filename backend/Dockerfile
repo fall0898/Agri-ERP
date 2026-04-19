@@ -17,9 +17,12 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     libonig-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && apt-get install -y libpq-dev \
     && docker-php-ext-install \
         pdo \
         pdo_mysql \
+        pdo_pgsql \
+        pgsql \
         mbstring \
         gd \
         exif \
