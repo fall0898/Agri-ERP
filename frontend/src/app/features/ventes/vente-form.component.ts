@@ -54,15 +54,28 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
               <label class="form-label">Acheteur</label>
               <input type="text" formControlName="acheteur" class="form-input" placeholder="Nom de l'acheteur"/>
             </div>
+            <div class="col-span-2">
+              <label class="form-label">Unité de mesure</label>
+              <div class="flex gap-3 mt-1">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" formControlName="unite" value="kg" class="accent-primary-600"/>
+                  <span class="text-sm text-neutral-700">Kilogramme (kg)</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" formControlName="unite" value="sac" class="accent-primary-600"/>
+                  <span class="text-sm text-neutral-700">Sac</span>
+                </label>
+              </div>
+            </div>
             <div>
-              <label class="form-label">Quantité (sac) *</label>
+              <label class="form-label">Quantité ({{ form.get('unite')?.value === 'sac' ? 'sac' : 'kg' }}) *</label>
               <input type="number" step="0.01" formControlName="quantite_kg" class="form-input" min="0" placeholder="0"/>
               @if (form.get('quantite_kg')?.invalid && form.get('quantite_kg')?.touched) {
                 <p class="form-error">Quantité requise.</p>
               }
             </div>
             <div>
-              <label class="form-label">Prix unitaire (FCFA/sac) *</label>
+              <label class="form-label">Prix unitaire (FCFA/{{ form.get('unite')?.value === 'sac' ? 'sac' : 'kg' }}) *</label>
               <input type="number" formControlName="prix_unitaire_fcfa" class="form-input" min="0" placeholder="0"/>
               @if (form.get('prix_unitaire_fcfa')?.invalid && form.get('prix_unitaire_fcfa')?.touched) {
                 <p class="form-error">Prix requis.</p>
@@ -118,6 +131,7 @@ export class VenteFormComponent implements OnInit {
     champ_id:           [null as number | null],
     acheteur:           [''],
     quantite_kg:        [null as number | null, [Validators.required, Validators.min(0)]],
+    unite:              ['kg'],
     prix_unitaire_fcfa: [null as number | null, [Validators.required, Validators.min(0)]],
     date_vente:         [new Date().toISOString().split('T')[0], Validators.required],
     notes:              [''],
@@ -130,13 +144,13 @@ export class VenteFormComponent implements OnInit {
       if (v) {
         this.form.patchValue({
           produit: v.produit, culture_id: v.culture_id, champ_id: v.champ_id,
-          acheteur: v.acheteur, quantite_kg: v.quantite_kg,
+          acheteur: v.acheteur, quantite_kg: v.quantite_kg, unite: v.unite ?? 'kg',
           prix_unitaire_fcfa: v.prix_unitaire_fcfa,
           date_vente: v.date_vente?.split('T')[0] ?? v.date_vente,
           notes: v.notes,
         });
       } else {
-        this.form.reset({ date_vente: new Date().toISOString().split('T')[0] });
+        this.form.reset({ date_vente: new Date().toISOString().split('T')[0], unite: 'kg' });
       }
     });
   }

@@ -12,6 +12,7 @@ class VenteResource extends JsonResource
             'id'                 => $this->id,
             'produit'            => $this->produit,
             'quantite_kg'        => $this->quantite_kg,
+            'unite'              => $this->unite ?? 'kg',
             'prix_unitaire_fcfa' => $this->prix_unitaire_fcfa,
             'montant_total_fcfa' => $this->montant_total_fcfa,
             'date_vente'         => $this->date_vente,

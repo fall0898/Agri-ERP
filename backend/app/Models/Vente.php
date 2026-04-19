@@ -14,7 +14,7 @@ class Vente extends Model
 
     protected $fillable = [
         'organisation_id', 'user_id', 'champ_id', 'culture_id', 'campagne_id',
-        'acheteur', 'produit', 'quantite_kg', 'prix_unitaire_fcfa',
+        'acheteur', 'produit', 'quantite_kg', 'unite', 'prix_unitaire_fcfa',
         'montant_total_fcfa', 'date_vente', 'notes',
         'est_auto_generee', 'source_type', 'source_id',
     ];

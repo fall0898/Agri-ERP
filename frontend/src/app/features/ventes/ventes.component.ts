@@ -109,7 +109,7 @@ import { VenteFormComponent } from './vente-form.component';
                 <div class="font-bold text-primary-600 text-base">{{ vente.montant_total_fcfa | currencyFcfa }}</div>
               </div>
               <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-500 mb-3">
-                <span>{{ vente.quantite_kg }} sac × {{ vente.prix_unitaire_fcfa | currencyFcfa }}/sac</span>
+                <span>{{ vente.quantite_kg }} {{ vente.unite ?? 'kg' }} × {{ vente.prix_unitaire_fcfa | currencyFcfa }}/{{ vente.unite ?? 'kg' }}</span>
                 @if (vente.champ) { <span>· {{ vente.champ.nom }}</span> }
               </div>
               <div class="flex items-center justify-between">
@@ -177,7 +177,7 @@ import { VenteFormComponent } from './vente-form.component';
                       {{ vente.culture?.nom ?? '—' }}
                     </td>
                     <td class="table-td text-neutral-600 text-sm">{{ vente.acheteur ?? '—' }}</td>
-                    <td class="table-td text-right tabular-nums text-sm">{{ vente.quantite_kg }} sac</td>
+                    <td class="table-td text-right tabular-nums text-sm">{{ vente.quantite_kg }} {{ vente.unite ?? 'kg' }}</td>
                     <td class="table-td text-right tabular-nums text-sm text-neutral-500">{{ vente.prix_unitaire_fcfa | currencyFcfa }}</td>
                     <td class="table-td text-right">
                       <span class="font-semibold text-green-600 tabular-nums">{{ vente.montant_total_fcfa | currencyFcfa }}</span>
