@@ -64,13 +64,13 @@ class CsvImportService
     private function importChamp(array $d, int $orgId, int $userId): void
     {
         if (empty($d['nom'])) throw new \Exception('Le nom est requis.');
-        if (! is_numeric($d['superficie_ha'] ?? '')) throw new \Exception('superficie_ha invalide.');
+        $superficie = is_numeric($d['superficie_ha'] ?? '') ? (float) $d['superficie_ha'] : 0;
 
         Champ::create([
             'organisation_id' => $orgId,
             'user_id'         => $userId,
             'nom'             => $d['nom'],
-            'superficie_ha'   => (float) $d['superficie_ha'],
+            'superficie_ha'   => $superficie,
             'localisation'    => $d['localisation'] ?: null,
             'description'     => $d['description'] ?: null,
             'est_actif'       => true,

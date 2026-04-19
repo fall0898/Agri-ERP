@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api\Import;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\ImportJob;
 use App\Models\Import;
+use App\Services\Import\CsvImportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ImportController extends Controller
@@ -19,6 +18,8 @@ class ImportController extends Controller
         'depenses' => ['description', 'categorie', 'montant_fcfa', 'date_depense', 'champ_nom'],
         'ventes'   => ['produit', 'acheteur', 'quantite_kg', 'prix_unitaire_fcfa', 'date_vente', 'champ_nom'],
     ];
+
+    public function __construct(private CsvImportService $csvService) {}
 
     public function template(string $type): StreamedResponse|JsonResponse
     {
@@ -49,34 +50,48 @@ class ImportController extends Controller
             'fichier' => 'required|file|mimes:csv,txt|max:5120',
         ]);
 
-        $user  = $request->user();
-        $orgId = $user->organisation_id;
-
-        // Store file permanently so the queued job can access it
-        $storedPath = $request->file('fichier')->store('imports', 'local');
-        $fullPath   = Storage::disk('local')->path($storedPath);
-
-        // Count data rows for progress tracking (skip BOM + header)
-        $lignesTotal = max(0, $this->countCsvRows($fullPath) - 1);
+        $user    = $request->user();
+        $orgId   = $user->organisation_id;
+        $file    = $request->file('fichier');
+        $tmpPath = $file->getRealPath();
 
         $import = Import::create([
             'organisation_id'  => $orgId,
             'user_id'          => $user->id,
             'type'             => $type,
-            'fichier_url'      => $storedPath,
-            'fichier_nom'      => $request->file('fichier')->getClientOriginalName(),
-            'statut'           => 'en_attente',
-            'lignes_total'     => $lignesTotal,
+            'fichier_url'      => $file->getClientOriginalName(),
+            'fichier_nom'      => $file->getClientOriginalName(),
+            'statut'           => 'en_cours',
+            'lignes_total'     => 0,
             'lignes_importees' => 0,
             'lignes_erreur'    => 0,
         ]);
 
-        ImportJob::dispatch($import->id, $fullPath, $type, $orgId, $user->id);
+        try {
+            $result = $this->csvService->process($tmpPath, $type, $orgId, $user->id);
 
-        return response()->json([
-            'message' => 'Import en cours de traitement.',
-            'job_id'  => $import->id,
-        ], 202);
+            $import->update([
+                'statut'           => 'termine',
+                'lignes_total'     => $result['imported'] + count($result['errors']),
+                'lignes_importees' => $result['imported'],
+                'lignes_erreur'    => count($result['errors']),
+                'erreurs_detail'   => $result['errors'] ?: null,
+            ]);
+
+            return response()->json([
+                'message'  => "{$result['imported']} ligne(s) importée(s) avec succès.",
+                'imported' => $result['imported'],
+                'errors'   => $result['errors'],
+            ]);
+        } catch (\Throwable $e) {
+            $import->update(['statut' => 'erreur', 'erreurs_detail' => [$e->getMessage()]]);
+
+            return response()->json([
+                'message'  => 'Erreur lors de l\'import.',
+                'imported' => 0,
+                'errors'   => [$e->getMessage()],
+            ], 500);
+        }
     }
 
     public function status(Request $request, int $id): JsonResponse
@@ -91,25 +106,5 @@ class ImportController extends Controller
             'lignes_erreur'    => $import->lignes_erreur,
             'erreurs_detail'   => $import->erreurs_detail,
         ]);
-    }
-
-    private function countCsvRows(string $filePath): int
-    {
-        $count  = 0;
-        $handle = fopen($filePath, 'r');
-
-        // Skip BOM
-        $bom = fread($handle, 3);
-        if ($bom !== chr(0xEF) . chr(0xBB) . chr(0xBF)) {
-            rewind($handle);
-        }
-
-        while (fgetcsv($handle, 0, ';') !== false) {
-            $count++;
-        }
-
-        fclose($handle);
-
-        return $count;
     }
 }
