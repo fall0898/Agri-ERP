@@ -8,40 +8,6 @@ use App\Http\Controllers\Api\Tenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-// ROUTE TEMPORAIRE — À SUPPRIMER APRÈS USAGE
-Route::get('/tmp-reset-kadiar-xK9p2mQ', function () {
-    $orgId = 1;
-    DB::statement('SET FOREIGN_KEY_CHECKS=0');
-
-    $rapport = [];
-
-    // Récupérer les IDs liés à cette org
-    $champIds   = DB::table('champs')->where('organisation_id', $orgId)->pluck('id');
-    $cultureIds = DB::table('cultures')->where('organisation_id', $orgId)->pluck('id');
-    $stockIds   = DB::table('stocks')->where('organisation_id', $orgId)->pluck('id');
-    $employeIds = DB::table('employes')->where('organisation_id', $orgId)->pluck('id');
-    $finIds     = DB::table('financements_individuels')->where('organisation_id', $orgId)->pluck('id');
-
-    // Tables FK indirectes
-    $rapport['mouvements_stock']           = DB::table('mouvements_stock')->whereIn('stock_id', $stockIds)->delete();
-    $rapport['utilisations_intrants']      = DB::table('utilisations_intrants')->whereIn('culture_id', $cultureIds)->delete();
-    $rapport['medias']                     = DB::table('medias')->whereIn('culture_id', $cultureIds)->orWhereIn('champ_id', $champIds)->delete();
-    $rapport['remboursements_financement'] = DB::table('remboursements_financement')->whereIn('financement_id', $finIds)->delete();
-
-    // Tables avec organisation_id direct
-    $direct = [
-        'financements_individuels','paiements_salaire','audit_logs',
-        'sync_queue','diagnostics','notifications','imports','taches',
-        'stocks','employes','ventes','depenses','cultures','champs',
-        'intrants','campagnes_agricoles',
-    ];
-    foreach ($direct as $table) {
-        $rapport[$table] = DB::table($table)->where('organisation_id', $orgId)->delete();
-    }
-
-    DB::statement('SET FOREIGN_KEY_CHECKS=1');
-    return response()->json(['status' => 'done', 'supprimé' => $rapport]);
-});
 
 /*
 |--------------------------------------------------------------------------

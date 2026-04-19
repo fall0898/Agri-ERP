@@ -60,14 +60,15 @@ class ImportController extends Controller
         $lignesTotal = max(0, $this->countCsvRows($fullPath) - 1);
 
         $import = Import::create([
-            'organisation_id' => $orgId,
-            'user_id'         => $user->id,
-            'type'            => $type,
-            'fichier_nom'     => $request->file('fichier')->getClientOriginalName(),
-            'statut'          => 'en_attente',
-            'lignes_total'    => $lignesTotal,
+            'organisation_id'  => $orgId,
+            'user_id'          => $user->id,
+            'type'             => $type,
+            'fichier_url'      => $storedPath,
+            'fichier_nom'      => $request->file('fichier')->getClientOriginalName(),
+            'statut'           => 'en_attente',
+            'lignes_total'     => $lignesTotal,
             'lignes_importees' => 0,
-            'lignes_erreur'   => 0,
+            'lignes_erreur'    => 0,
         ]);
 
         ImportJob::dispatch($import->id, $fullPath, $type, $orgId, $user->id);
