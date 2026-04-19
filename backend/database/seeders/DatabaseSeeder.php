@@ -16,24 +16,25 @@ class DatabaseSeeder extends Seeder
         // 1. Super-Admin Plateforme (sans organisation)
         User::firstOrCreate(['email' => 'superadmin@agri-erp.com'], [
             'organisation_id' => null,
-            'nom' => 'Super Admin Agri-ERP',
-            'password' => Hash::make('password'),
-            'role' => 'super_admin',
-            'est_actif' => true,
+            'nom'             => 'Super Admin Agri-ERP',
+            'telephone'       => '00000000',
+            'password'        => Hash::make('password'),
+            'role'            => 'super_admin',
+            'est_actif'       => true,
             'onboarding_complete' => true,
         ]);
 
         // 2. Organisation Démo "Exploitation Kadiar"
         $organisation = Organisation::firstOrCreate(['slug' => 'kadiar-demo'], [
-            'nom' => 'Exploitation Kadiar',
-            'slug' => 'kadiar-demo',
-            'email_contact' => 'admin@kadiar-demo.com',
-            'telephone' => '+221 77 000 0000',
-            'devise' => 'FCFA',
-            'plan' => 'pro',
-            'plan_expire_at' => now()->addYear(),
+            'nom'               => 'Exploitation Kadiar',
+            'slug'              => 'kadiar-demo',
+            'email_contact'     => 'admin@kadiar-demo.com',
+            'telephone'         => '+221 77 000 0000',
+            'devise'            => 'FCFA',
+            'plan'              => 'pro',
+            'plan_expire_at'    => now()->addYear(),
             'periode_essai_fin' => now()->addDays(30),
-            'est_active' => true,
+            'est_active'        => true,
             'campagne_debut_mois' => 10,
             'campagne_debut_jour' => 1,
         ]);
@@ -41,20 +42,22 @@ class DatabaseSeeder extends Seeder
         // 3. Admin du tenant démo
         User::firstOrCreate(['email' => 'admin@kadiar-demo.com'], [
             'organisation_id' => $organisation->id,
-            'nom' => 'Mamadou Diallo',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'est_actif' => true,
+            'nom'             => 'Mamadou Diallo',
+            'telephone'       => '77 000 0001',
+            'password'        => Hash::make('password'),
+            'role'            => 'admin',
+            'est_actif'       => true,
             'onboarding_complete' => true,
         ]);
 
         // 4. Lecteur du tenant démo
         User::firstOrCreate(['email' => 'lecteur@kadiar-demo.com'], [
             'organisation_id' => $organisation->id,
-            'nom' => 'Aïssatou Bah',
-            'password' => Hash::make('password'),
-            'role' => 'lecteur',
-            'est_actif' => true,
+            'nom'             => 'Aïssatou Bah',
+            'telephone'       => '77 000 0002',
+            'password'        => Hash::make('password'),
+            'role'            => 'lecteur',
+            'est_actif'       => true,
             'onboarding_complete' => true,
         ]);
 
