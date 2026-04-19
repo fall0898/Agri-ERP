@@ -109,18 +109,20 @@ class FinanceService
 
     public function getGraphiqueFinance(int $organisationId, ?int $campagneId = null): array
     {
-        $mois = [];
+        $isPgsql = DB::connection()->getDriverName() === 'pgsql';
+        $moisVente   = $isPgsql ? "TO_CHAR(date_vente, 'YYYY-MM')"   : 'DATE_FORMAT(date_vente, "%Y-%m")';
+        $moisDepense = $isPgsql ? "TO_CHAR(date_depense, 'YYYY-MM')" : 'DATE_FORMAT(date_depense, "%Y-%m")';
 
         $ventesParMois = Vente::where('organisation_id', $organisationId)
             ->when($campagneId, fn($q) => $q->where('campagne_id', $campagneId))
-            ->select(DB::raw('DATE_FORMAT(date_vente, "%Y-%m") as mois'), DB::raw('SUM(montant_total_fcfa) as total'))
+            ->select(DB::raw("$moisVente as mois"), DB::raw('SUM(montant_total_fcfa) as total'))
             ->groupBy('mois')
             ->orderBy('mois')
             ->pluck('total', 'mois');
 
         $depensesParMois = Depense::where('organisation_id', $organisationId)
             ->when($campagneId, fn($q) => $q->where('campagne_id', $campagneId))
-            ->select(DB::raw('DATE_FORMAT(date_depense, "%Y-%m") as mois'), DB::raw('SUM(montant_fcfa) as total'))
+            ->select(DB::raw("$moisDepense as mois"), DB::raw('SUM(montant_fcfa) as total'))
             ->groupBy('mois')
             ->orderBy('mois')
             ->pluck('total', 'mois');

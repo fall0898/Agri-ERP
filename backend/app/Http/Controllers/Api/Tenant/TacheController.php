@@ -21,7 +21,7 @@ class TacheController extends Controller
         if ($request->date_debut) $query->where('date_debut', '>=', $request->date_debut);
         if ($request->date_fin) $query->where('date_debut', '<=', $request->date_fin);
 
-        return response()->json($query->orderByRaw("FIELD(priorite, 'urgente', 'haute', 'normale', 'basse')")->orderBy('date_debut')->get());
+        return response()->json($query->orderByRaw("CASE WHEN priorite = 'urgente' THEN 1 WHEN priorite = 'haute' THEN 2 WHEN priorite = 'normale' THEN 3 WHEN priorite = 'basse' THEN 4 ELSE 5 END")->orderBy('date_debut')->get());
     }
 
     public function store(Request $request): JsonResponse

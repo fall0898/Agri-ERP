@@ -97,7 +97,7 @@ class DashboardController extends Controller
         $taches = Tache::where('organisation_id', $orgId)
             ->whereIn('statut', ['a_faire', 'en_cours'])
             ->with(['employe:id,nom', 'champ:id,nom'])
-            ->orderByRaw("FIELD(priorite, 'urgente', 'haute', 'normale', 'basse')")
+            ->orderByRaw("CASE WHEN priorite = 'urgente' THEN 1 WHEN priorite = 'haute' THEN 2 WHEN priorite = 'normale' THEN 3 WHEN priorite = 'basse' THEN 4 ELSE 5 END")
             ->orderBy('date_debut')
             ->limit(10)
             ->get();
@@ -154,7 +154,7 @@ class DashboardController extends Controller
             $tachesEnCours = Tache::where('organisation_id', $orgId)
                 ->whereIn('statut', ['a_faire', 'en_cours'])
                 ->with(['employe:id,nom', 'champ:id,nom'])
-                ->orderByRaw("FIELD(priorite, 'urgente', 'haute', 'normale', 'basse')")
+                ->orderByRaw("CASE WHEN priorite = 'urgente' THEN 1 WHEN priorite = 'haute' THEN 2 WHEN priorite = 'normale' THEN 3 WHEN priorite = 'basse' THEN 4 ELSE 5 END")
                 ->orderBy('date_debut')->limit(10)->get();
 
             $graphiqueFinance  = $this->financeService->getGraphiqueFinance($orgId, null);

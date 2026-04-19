@@ -259,6 +259,15 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
             return response()->json(['ok' => true, 'plan' => $plan]);
         });
 
+        // TMP: assigner campagne_id aux enregistrements orphelins d'une org (à supprimer après usage)
+        Route::post('/tenants/{orgId}/assign-campagne', function ($orgId) {
+            $campagne = \App\Models\CampagneAgricole::where('organisation_id', $orgId)->where('est_courante', true)->first();
+            if (!$campagne) return response()->json(['error' => 'Pas de campagne courante'], 404);
+            $deps = \App\Models\Depense::where('organisation_id', $orgId)->whereNull('campagne_id')->update(['campagne_id' => $campagne->id]);
+            $ventes = \App\Models\Vente::where('organisation_id', $orgId)->whereNull('campagne_id')->update(['campagne_id' => $campagne->id]);
+            return response()->json(['ok' => true, 'campagne_id' => $campagne->id, 'depenses_updated' => $deps, 'ventes_updated' => $ventes]);
+        });
+
         // TMP: supprimer un remboursement financement spécifique + sa vente auto (à supprimer après usage)
         Route::delete('/remboursements-financement/{id}', function ($id) {
             $remb = \App\Models\RemboursementFinancement::findOrFail($id);
