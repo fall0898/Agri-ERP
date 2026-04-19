@@ -237,8 +237,8 @@ export class DepensesComponent implements OnInit {
     const deb = this.filterDateDeb();
     const fin = this.filterDateFin();
     if (cat) list = list.filter(d => d.categorie === cat);
-    if (champ === '__aucun__') list = list.filter(d => !d.champ_id);
-    else if (champ) list = list.filter(d => String(d.champ_id) === champ);
+    if (champ === '__aucun__') list = list.filter(d => !d.champ);
+    else if (champ) list = list.filter(d => String(d.champ?.id) === champ);
     if (texte) list = list.filter(d => d.description?.toLowerCase().includes(texte));
     if (deb) list = list.filter(d => (d.date_depense ?? '') >= deb);
     if (fin) list = list.filter(d => (d.date_depense ?? '') <= fin);

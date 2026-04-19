@@ -264,8 +264,8 @@ export class VentesComponent implements OnInit {
     const produit = this.filterProduit().toLowerCase();
     const deb = this.filterDateDeb();
     const fin = this.filterDateFin();
-    if (champ === '__aucun__') list = list.filter(v => !v.champ_id);
-    else if (champ) list = list.filter(v => String(v.champ_id) === champ);
+    if (champ === '__aucun__') list = list.filter(v => !v.champ);
+    else if (champ) list = list.filter(v => String(v.champ?.id) === champ);
     if (produit) list = list.filter(v => v.produit?.toLowerCase().includes(produit));
     if (deb) list = list.filter(v => (v.date_vente ?? '') >= deb);
     if (fin) list = list.filter(v => (v.date_vente ?? '') <= fin);
