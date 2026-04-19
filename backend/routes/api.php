@@ -259,6 +259,14 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
             return response()->json(['ok' => true, 'plan' => $plan]);
         });
 
+        // TMP: supprimer un remboursement financement spécifique + sa vente auto (à supprimer après usage)
+        Route::delete('/remboursements-financement/{id}', function ($id) {
+            $remb = \App\Models\RemboursementFinancement::findOrFail($id);
+            if ($remb->vente_id) \App\Models\Vente::where('id', $remb->vente_id)->forceDelete();
+            $remb->delete();
+            return response()->json(['ok' => true, 'remboursement_id' => $id]);
+        });
+
         // TMP: reset données Kadiar (à supprimer après usage)
         Route::delete('/tenants/{id}/reset-data', function ($id) {
             $org = \App\Models\Organisation::findOrFail($id);
