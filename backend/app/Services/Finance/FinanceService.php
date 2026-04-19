@@ -44,16 +44,18 @@ class FinanceService
             ->pluck('total', 'champ_id');
 
         $champIds = $ventes->keys()->merge($depenses->keys())->unique();
+        $champNoms = \App\Models\Champ::whereIn('id', $champIds)->pluck('nom', 'id');
 
-        return $champIds->map(function ($champId) use ($ventes, $depenses) {
+        return $champIds->map(function ($champId) use ($ventes, $depenses, $champNoms) {
             $totalVentes = (float) ($ventes[$champId] ?? 0);
             $totalDepenses = (float) ($depenses[$champId] ?? 0);
 
             return [
-                'champ_id' => $champId,
-                'total_ventes' => $totalVentes,
+                'champ_id'       => $champId,
+                'nom'            => $champNoms[$champId] ?? "Champ #{$champId}",
+                'total_ventes'   => $totalVentes,
                 'total_depenses' => $totalDepenses,
-                'solde_net' => $totalVentes - $totalDepenses,
+                'solde_net'      => $totalVentes - $totalDepenses,
             ];
         })->values()->toArray();
     }

@@ -1,22 +1,14 @@
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { BaseChartDirective } from 'ng2-charts';
-import { ChartData, ChartOptions } from 'chart.js';
-import {
-  Chart, CategoryScale, LinearScale, BarElement, LineElement,
-  PointElement, ArcElement, Tooltip, Legend, Filler
-} from 'chart.js';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
 import { DateFrPipe } from '../../core/pipes/date-fr.pipe';
 
-Chart.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Tooltip, Legend, Filler);
-
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, BaseChartDirective, CurrencyFcfaPipe, DateFrPipe],
+  imports: [RouterLink, CurrencyFcfaPipe, DateFrPipe],
   styles: [`
     :host { display: block; }
 
@@ -224,13 +216,60 @@ Chart.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement
       .mid-row { grid-template-columns: 1.65fr 1fr; gap: 14px; margin-bottom: 14px; }
     }
 
-    /* chart wrapper: adaptive height */
-    .chart-wrap { height: 210px; }
-    @media (min-width: 768px)  { .chart-wrap { height: 240px; } }
-    @media (min-width: 1024px) { .chart-wrap { height: 270px; } }
-
     /* chart empty/loading */
     .chart-skel { border-radius: 10px; }
+
+    /* ─── Custom par-champ bars ─── */
+    .champ-list { display: flex; flex-direction: column; gap: 0; }
+    .champ-item {
+      padding: 13px 0; border-bottom: 1px solid var(--border-lt);
+    }
+    .champ-item:last-child { border-bottom: none; }
+    .champ-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 9px;
+    }
+    .champ-lbl {
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px; font-weight: 700; letter-spacing: .4px;
+      color: var(--txt); text-transform: uppercase;
+    }
+    .champ-badge {
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px; font-weight: 800;
+      padding: 2px 9px; border-radius: 20px; letter-spacing: .2px;
+    }
+    .champ-badge.pos { background: #dcfce7; color: #15803d; }
+    .champ-badge.neg { background: #fee2e2; color: #b91c1c; }
+    .bar-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+    }
+    .bar-row:last-child { margin-bottom: 0; }
+    .bar-lbl {
+      font-size: 10px; font-weight: 600; letter-spacing: .3px;
+      text-transform: uppercase; width: 52px; flex-shrink: 0; color: var(--txt2);
+    }
+    .bar-track {
+      flex: 1; height: 7px; background: #f1ece5;
+      border-radius: 99px; overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%; border-radius: 99px;
+      transition: width 1s cubic-bezier(.4,0,.2,1);
+    }
+    .bar-fill.v {
+      background: linear-gradient(90deg, #16a34a 0%, #4ade80 100%);
+      box-shadow: 0 0 6px rgba(22,163,74,.35);
+    }
+    .bar-fill.d {
+      background: linear-gradient(90deg, #f97316 0%, #fbbf24 100%);
+      box-shadow: 0 0 6px rgba(249,115,22,.3);
+    }
+    .bar-amt {
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px; font-weight: 700;
+      width: 48px; text-align: right; flex-shrink: 0;
+    }
 
     /* ─── Synthèse ─── */
     .syn-row {
@@ -486,18 +525,55 @@ Chart.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement
   <!-- ══════════ MIDDLE ROW: CHART + SYNTHÈSE ══════════ -->
   <div class="mid-row fade-in fade-in-3">
 
-    <!-- Bar chart par exploitation -->
+    <!-- Barres par exploitation -->
     <div class="card">
       <div class="card-hd">
         <p class="card-title">Ventes vs Dépenses par exploitation</p>
         <a routerLink="/finances" class="card-lk">Voir le détail →</a>
       </div>
+
+      <!-- Légende -->
       @if (parChamp().length) {
-        <div class="chart-wrap">
-          <canvas baseChart [data]="barData()" [options]="barOpts" type="bar"></canvas>
+        <div style="display:flex;gap:14px;margin-bottom:14px;">
+          <span style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:#16a34a">
+            <span style="width:20px;height:4px;border-radius:99px;background:linear-gradient(90deg,#16a34a,#4ade80);display:inline-block"></span>
+            Ventes
+          </span>
+          <span style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:#f97316">
+            <span style="width:20px;height:4px;border-radius:99px;background:linear-gradient(90deg,#f97316,#fbbf24);display:inline-block"></span>
+            Dépenses
+          </span>
         </div>
+        <div class="champ-list">
+          @for (champ of parChamp(); track champ.champ_id) {
+            <div class="champ-item">
+              <div class="champ-hd">
+                <span class="champ-lbl">{{ champ.nom }}</span>
+                <span class="champ-badge" [class.pos]="champ.solde_net >= 0" [class.neg]="champ.solde_net < 0">
+                  {{ champ.solde_net >= 0 ? '+' : '' }}{{ compact(champ.solde_net) }} FCFA
+                </span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-lbl" style="color:#16a34a">Ventes</span>
+                <div class="bar-track">
+                  <div class="bar-fill v" [style.width.%]="pct(champ.total_ventes)"></div>
+                </div>
+                <span class="bar-amt" style="color:#16a34a">{{ compact(champ.total_ventes) }}</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-lbl" style="color:#f97316">Charges</span>
+                <div class="bar-track">
+                  <div class="bar-fill d" [style.width.%]="pct(champ.total_depenses)"></div>
+                </div>
+                <span class="bar-amt" style="color:#f97316">{{ compact(champ.total_depenses) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (loading()) {
+        <div class="chart-skel skel" style="height:180px;border-radius:10px"></div>
       } @else {
-        <div class="chart-skel skel chart-wrap"></div>
+        <div class="empty">Aucune donnée par exploitation</div>
       }
     </div>
 
@@ -646,81 +722,21 @@ export class DashboardComponent implements OnInit {
       : 0
   );
 
-  /* ── Bar chart ── */
-  barData = computed<ChartData<'bar'>>(() => ({
-    labels: this.parChamp().map(c => c.nom ?? c.champ ?? 'Champ'),
-    datasets: [
-      {
-        label: 'Ventes',
-        data: this.parChamp().map(c => c.total_ventes ?? 0),
-        backgroundColor: '#4ade80',
-        hoverBackgroundColor: '#22c55e',
-        borderRadius: 5,
-        borderSkipped: false,
-      },
-      {
-        label: 'Dépenses',
-        data: this.parChamp().map(c => c.total_depenses ?? 0),
-        backgroundColor: '#fca5a5',
-        hoverBackgroundColor: '#f87171',
-        borderRadius: 5,
-        borderSkipped: false,
-      },
-    ],
-  }));
+  maxChampValue = computed(() =>
+    Math.max(1, ...this.parChamp().flatMap((c: any) => [c.total_ventes ?? 0, c.total_depenses ?? 0]))
+  );
 
-  barOpts: ChartOptions<'bar'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'bottom',
-        labels: {
-          usePointStyle: true,
-          pointStyleWidth: 9,
-          padding: 16,
-          font: { size: 11, family: 'DM Sans' },
-          color: '#6b7280',
-        },
-      },
-      tooltip: {
-        backgroundColor: '#1e293b',
-        titleColor: '#94a3b8',
-        bodyColor: '#f1f5f9',
-        padding: 10,
-        cornerRadius: 8,
-        callbacks: {
-          label: (c: any) =>
-            ` ${c.dataset.label} : ${new Intl.NumberFormat('fr-FR').format(c.raw as number)} FCFA`,
-        },
-      },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        border: { display: false },
-        ticks: {
-          color: '#6b7280',
-          font: { size: 11, family: 'DM Sans' },
-          maxRotation: 30,
-          maxTicksLimit: 6,
-        },
-      },
-      y: {
-        grid: { color: '#f0ebe3' },
-        border: { display: false },
-        ticks: {
-          color: '#6b7280',
-          font: { size: 10, family: 'DM Sans' },
-          padding: 6,
-          maxTicksLimit: 5,
-          callback: (v: any) =>
-            new Intl.NumberFormat('fr-FR', { notation: 'compact' }).format(v),
-        },
-      },
-    },
-  };
+  pct(val: number): number {
+    return Math.round((val / this.maxChampValue()) * 100);
+  }
+
+  compact(n: number): string {
+    const abs = Math.abs(n);
+    const sign = n < 0 ? '−' : '';
+    if (abs >= 1_000_000) return sign + (abs / 1_000_000).toFixed(1).replace('.', ',') + 'M';
+    if (abs >= 1_000)     return sign + new Intl.NumberFormat('fr-FR').format(Math.round(abs / 1_000)) + 'K';
+    return sign + new Intl.NumberFormat('fr-FR').format(Math.round(abs));
+  }
 
   ngOnInit(): void {
     this.api.get<any>('/api/dashboard').subscribe({
