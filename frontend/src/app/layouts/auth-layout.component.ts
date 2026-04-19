@@ -1,8 +1,10 @@
 import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationStart } from '@angular/router';
 import { SidebarComponent } from './components/sidebar.component';
 import { TopbarComponent } from './components/topbar.component';
 import { NotificationService } from '../core/services/notification.service';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-auth-layout',
@@ -108,9 +110,20 @@ export class AuthLayoutComponent implements OnInit, OnDestroy {
   showMobileMenu = signal(false);
   private notifService = inject(NotificationService);
   private router = inject(Router);
+  private routerSub?: Subscription;
 
-  ngOnInit(): void { this.notifService.startPolling(); }
-  ngOnDestroy(): void { this.notifService.stopPolling(); }
+  ngOnInit(): void {
+    this.notifService.startPolling();
+    this.routerSub = this.router.events.pipe(
+      filter(e => e instanceof NavigationStart)
+    ).subscribe(() => this.showMobileMenu.set(false));
+  }
+
+  ngOnDestroy(): void {
+    this.notifService.stopPolling();
+    this.routerSub?.unsubscribe();
+  }
+
   toggleSidebar(): void { this.sidebarCollapsed.update(v => !v); }
   isActive(path: string): boolean { return this.router.url === path || this.router.url.startsWith(path + '/'); }
 }
