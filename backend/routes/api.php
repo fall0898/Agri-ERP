@@ -250,5 +250,35 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
         Route::put('/users/{id}', [Admin\UserController::class, 'update']);
         Route::patch('/users/{id}/activer', [Admin\UserController::class, 'toggleActif']);
         Route::delete('/users/{id}', [Admin\UserController::class, 'destroy']);
+
+        // TMP: mise à jour plan organisation (à supprimer après usage)
+        Route::patch('/tenants/{id}/plan', function ($id) {
+            $org = \App\Models\Organisation::findOrFail($id);
+            $plan = request('plan', 'entreprise');
+            $org->update(['plan' => $plan, 'plan_expire_at' => now()->addYears(5)]);
+            return response()->json(['ok' => true, 'plan' => $plan]);
+        });
+
+        // TMP: reset données Kadiar (à supprimer après usage)
+        Route::delete('/tenants/{id}/reset-data', function ($id) {
+            $org = \App\Models\Organisation::findOrFail($id);
+            // Supprimer dans l'ordre pour respecter les FK
+            \App\Models\RemboursementFinancement::whereHas('financement', fn($q) => $q->where('organisation_id', $id))->delete();
+            \App\Models\FinancementIndividuel::where('organisation_id', $id)->delete();
+            \App\Models\PaiementSalaire::where('organisation_id', $id)->delete();
+            \App\Models\Media::where('organisation_id', $id)->delete();
+            \App\Models\UtilisationIntrant::whereHas('culture', fn($q) => $q->where('organisation_id', $id))->delete();
+            \App\Models\MouvementStock::whereHas('stock', fn($q) => $q->where('organisation_id', $id))->delete();
+            \App\Models\Depense::where('organisation_id', $id)->forceDelete();
+            \App\Models\Vente::where('organisation_id', $id)->forceDelete();
+            \App\Models\Tache::where('organisation_id', $id)->forceDelete();
+            \App\Models\Culture::where('organisation_id', $id)->forceDelete();
+            \App\Models\Stock::where('organisation_id', $id)->forceDelete();
+            \App\Models\Champ::where('organisation_id', $id)->forceDelete();
+            \App\Models\Employe::where('organisation_id', $id)->forceDelete();
+            \App\Models\Intrant::where('organisation_id', $id)->delete();
+            \App\Models\User::where('organisation_id', $id)->where('role', '!=', 'super_admin')->delete();
+            return response()->json(['ok' => true, 'message' => "Données de l'org {$id} supprimées"]);
+        });
     });
 });

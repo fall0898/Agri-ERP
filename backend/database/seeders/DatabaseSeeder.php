@@ -25,14 +25,14 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 2. Organisation Démo "Exploitation Kadiar"
-        $organisation = Organisation::firstOrCreate(['slug' => 'kadiar-demo'], [
+        $organisation = Organisation::updateOrCreate(['slug' => 'kadiar-demo'], [
             'nom'               => 'Exploitation Kadiar',
             'slug'              => 'kadiar-demo',
             'email_contact'     => 'admin@kadiar-demo.com',
             'telephone'         => '+221 77 000 0000',
             'devise'            => 'FCFA',
-            'plan'              => 'pro',
-            'plan_expire_at'    => now()->addYear(),
+            'plan'              => 'entreprise',
+            'plan_expire_at'    => now()->addYears(5),
             'periode_essai_fin' => now()->addDays(30),
             'est_active'        => true,
             'campagne_debut_mois' => 10,
