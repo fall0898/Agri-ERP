@@ -12,18 +12,28 @@ use Illuminate\Support\Facades\Route;
 Route::get('/tmp-reset-kadiar-xK9p2mQ', function () {
     $orgId = 1;
     DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+    $rapport = [];
+
+    // Tables avec organisation_id direct
     $tables = [
         'remboursements_financement','financements_individuels','utilisations_intrants',
-        'paiements_salaire','mouvements_stock','audit_logs','sync_queue','diagnostics',
+        'paiements_salaire','audit_logs','sync_queue','diagnostics',
         'medias','notifications','imports','taches','stocks','employes',
         'ventes','depenses','cultures','champs','intrants','campagnes_agricoles',
     ];
-    $rapport = [];
     foreach ($tables as $table) {
         $count = DB::table($table)->where('organisation_id', $orgId)->count();
         DB::table($table)->where('organisation_id', $orgId)->delete();
         $rapport[$table] = $count;
     }
+
+    // mouvements_stock passe par stock_id
+    $stockIds = DB::table('stocks')->where('organisation_id', $orgId)->pluck('id');
+    $count = DB::table('mouvements_stock')->whereIn('stock_id', $stockIds)->count();
+    DB::table('mouvements_stock')->whereIn('stock_id', $stockIds)->delete();
+    $rapport['mouvements_stock'] = $count;
+
     DB::statement('SET FOREIGN_KEY_CHECKS=1');
     return response()->json(['status' => 'done', 'supprimé' => $rapport]);
 });
