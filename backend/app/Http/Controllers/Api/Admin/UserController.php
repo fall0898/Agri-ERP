@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -23,7 +24,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'nom'             => 'required|string|max:100',
-            'telephone'       => 'required|string|max:30|unique:users,telephone',
+            'telephone'       => ['required', 'string', 'max:30', Rule::unique('users', 'telephone')->whereNull('deleted_at')],
             'password'        => 'required|string|min:6',
             'role'            => 'required|in:super_admin,admin,lecteur',
             'organisation_id' => 'nullable|exists:organisations,id',
@@ -52,7 +53,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'nom'             => 'sometimes|string|max:100',
-            'telephone'       => 'sometimes|string|max:30|unique:users,telephone,' . $id,
+            'telephone'       => ['sometimes', 'string', 'max:30', Rule::unique('users', 'telephone')->ignore($id)->whereNull('deleted_at')],
             'password'        => 'sometimes|nullable|string|min:6',
             'role'            => 'sometimes|in:super_admin,admin,lecteur',
             'organisation_id' => 'sometimes|nullable|exists:organisations,id',
@@ -88,9 +89,9 @@ class UserController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        $user = User::findOrFail($id);
+        $user = User::withTrashed()->findOrFail($id);
         $user->tokens()->delete();
-        $user->delete();
+        $user->forceDelete();
 
         return response()->json(['message' => 'Utilisateur supprimé.']);
     }
