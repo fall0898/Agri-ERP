@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, computed } from '@angular/core';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -108,7 +108,7 @@ interface ImportResult {
             @if (pendingFile()) {
               <button (click)="upload()" [disabled]="uploading()"
                       class="w-full btn-primary h-11 text-sm">
-                {{ uploading() ? 'Import en cours...' : '🚀 Lancer l\'import' }}
+                {{ labelBouton() }}
               </button>
             }
 
@@ -164,6 +164,7 @@ export class ImportComponent {
   uploading = signal(false);
   pendingFile = signal<File | null>(null);
   result = signal<ImportResult | null>(null);
+  labelBouton = computed(() => this.uploading() ? 'Import en cours...' : '🚀 Lancer l\'import');
 
   types: ImportType[] = [
     {
