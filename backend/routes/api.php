@@ -5,7 +5,28 @@ use App\Http\Controllers\Api\Auth;
 use App\Http\Controllers\Api\DiagnosticController;
 use App\Http\Controllers\Api\Import;
 use App\Http\Controllers\Api\Tenant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+
+// ROUTE TEMPORAIRE — À SUPPRIMER APRÈS USAGE
+Route::get('/tmp-reset-kadiar-xK9p2mQ', function () {
+    $orgId = 1;
+    DB::statement('SET FOREIGN_KEY_CHECKS=0');
+    $tables = [
+        'remboursements_financement','financements_individuels','utilisations_intrants',
+        'paiements_salaire','mouvements_stock','audit_logs','sync_queue','diagnostics',
+        'medias','notifications','imports','taches','stocks','employes',
+        'ventes','depenses','cultures','champs','intrants','campagnes_agricoles',
+    ];
+    $rapport = [];
+    foreach ($tables as $table) {
+        $count = DB::table($table)->where('organisation_id', $orgId)->count();
+        DB::table($table)->where('organisation_id', $orgId)->delete();
+        $rapport[$table] = $count;
+    }
+    DB::statement('SET FOREIGN_KEY_CHECKS=1');
+    return response()->json(['status' => 'done', 'supprimé' => $rapport]);
+});
 
 /*
 |--------------------------------------------------------------------------
