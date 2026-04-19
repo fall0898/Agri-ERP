@@ -55,10 +55,10 @@ import { VenteFormComponent } from './vente-form.component';
           <div class="flex-1 min-w-44">
             <label class="form-label">Filtrer par champ</label>
             <select class="form-input" (change)="filterChamp.set($any($event.target).value)">
-              <option value="">Tous les champs</option>
-              <option value="__aucun__">Sans champ</option>
+              <option value="" [selected]="!filterChamp()">Tous les champs</option>
+              <option value="__aucun__" [selected]="filterChamp() === '__aucun__'">Sans champ</option>
               @for (champ of champs(); track champ.id) {
-                <option [value]="champ.id">{{ champ.nom }}</option>
+                <option [value]="champ.id" [selected]="filterChamp() == champ.id">{{ champ.nom }}</option>
               }
             </select>
           </div>
@@ -66,17 +66,17 @@ import { VenteFormComponent } from './vente-form.component';
           <div class="flex-1 min-w-44">
             <label class="form-label">Rechercher un produit</label>
             <input type="text" class="form-input" placeholder="Mil, Tomates…"
-                   (input)="filterProduit.set($any($event.target).value)"/>
+                   [value]="filterProduit()" (input)="filterProduit.set($any($event.target).value)"/>
           </div>
           <!-- Filtre date début -->
           <div class="min-w-36">
             <label class="form-label">Du</label>
-            <input type="date" class="form-input" (change)="filterDateDeb.set($any($event.target).value)"/>
+            <input type="date" class="form-input" [value]="filterDateDeb()" (change)="filterDateDeb.set($any($event.target).value)"/>
           </div>
           <!-- Filtre date fin -->
           <div class="min-w-36">
             <label class="form-label">Au</label>
-            <input type="date" class="form-input" (change)="filterDateFin.set($any($event.target).value)"/>
+            <input type="date" class="form-input" [value]="filterDateFin()" (change)="filterDateFin.set($any($event.target).value)"/>
           </div>
           <!-- Reset -->
           @if (hasActiveFilters()) {

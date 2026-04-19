@@ -60,26 +60,54 @@ const CATEGORIES = [
       </div>
 
       <!-- Filtres -->
-      <div class="card flex flex-wrap gap-4">
-        <div class="flex-1 min-w-44">
-          <label class="form-label">Exploitation</label>
-          <select class="form-input" (change)="filterChamp.set($any($event.target).value)">
-            <option value="">Toutes les exploitations</option>
-            <option value="__aucun__">Sans exploitation</option>
-            @for (champ of champs(); track champ.id) {
-              <option [value]="champ.id">{{ champ.nom }}</option>
-            }
-          </select>
+      <div class="card p-4">
+        <div class="flex flex-wrap items-end gap-4">
+          <div class="flex-1 min-w-44">
+            <label class="form-label">Exploitation</label>
+            <select class="form-input" (change)="filterChamp.set($any($event.target).value)">
+              <option value="" [selected]="!filterChamp()">Toutes les exploitations</option>
+              <option value="__aucun__" [selected]="filterChamp() === '__aucun__'">Sans exploitation</option>
+              @for (champ of champs(); track champ.id) {
+                <option [value]="champ.id" [selected]="filterChamp() == champ.id">{{ champ.nom }}</option>
+              }
+            </select>
+          </div>
+          <div class="flex-1 min-w-44">
+            <label class="form-label">Catégorie</label>
+            <select class="form-input" (change)="filterCat.set($any($event.target).value)">
+              <option value="" [selected]="!filterCat()">Toutes les catégories</option>
+              @for (cat of categories; track cat.id) {
+                <option [value]="cat.id" [selected]="filterCat() === cat.id">{{ cat.nom }}</option>
+              }
+            </select>
+          </div>
+          <div class="flex-1 min-w-44">
+            <label class="form-label">Recherche</label>
+            <input type="text" class="form-input" placeholder="Description…"
+                   [value]="filterTexte()" (input)="filterTexte.set($any($event.target).value)"/>
+          </div>
+          <div class="min-w-36">
+            <label class="form-label">Du</label>
+            <input type="date" class="form-input" [value]="filterDateDeb()" (change)="filterDateDeb.set($any($event.target).value)"/>
+          </div>
+          <div class="min-w-36">
+            <label class="form-label">Au</label>
+            <input type="date" class="form-input" [value]="filterDateFin()" (change)="filterDateFin.set($any($event.target).value)"/>
+          </div>
+          @if (hasActiveFilters()) {
+            <button (click)="resetFilters()"
+                    class="btn-ghost text-xs h-10 px-3 text-neutral-500 hover:text-red-600">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              Réinitialiser
+            </button>
+          }
         </div>
-        <div class="flex-1 min-w-44">
-          <label class="form-label">Catégorie</label>
-          <select class="form-input" (change)="filterCat.set($any($event.target).value)">
-            <option value="">Toutes les catégories</option>
-            @for (cat of categories; track cat.id) {
-              <option [value]="cat.id">{{ cat.nom }}</option>
-            }
-          </select>
-        </div>
+        @if (hasActiveFilters()) {
+          <div class="mt-3 flex items-center gap-2 text-xs text-neutral-500">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2V12.46L22 3z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            {{ filtered().length }} résultat(s) sur {{ depenses().length }} dépenses
+          </div>
+        }
       </div>
 
       <!-- Tableau -->
@@ -193,14 +221,27 @@ export class DepensesComponent implements OnInit {
   champs = signal<any[]>([]);
   filterCat = signal('');
   filterChamp = signal('');
+  filterTexte = signal('');
+  filterDateDeb = signal('');
+  filterDateFin = signal('');
+
+  hasActiveFilters = computed(() =>
+    !!this.filterCat() || !!this.filterChamp() || !!this.filterTexte() || !!this.filterDateDeb() || !!this.filterDateFin()
+  );
 
   filtered = computed(() => {
     let list = this.depenses();
     const cat = this.filterCat();
     const champ = this.filterChamp();
+    const texte = this.filterTexte().toLowerCase();
+    const deb = this.filterDateDeb();
+    const fin = this.filterDateFin();
     if (cat) list = list.filter(d => d.categorie === cat);
     if (champ === '__aucun__') list = list.filter(d => !d.champ_id);
     else if (champ) list = list.filter(d => String(d.champ_id) === champ);
+    if (texte) list = list.filter(d => d.description?.toLowerCase().includes(texte));
+    if (deb) list = list.filter(d => (d.date_depense ?? '') >= deb);
+    if (fin) list = list.filter(d => (d.date_depense ?? '') <= fin);
     return list;
   });
 
@@ -225,6 +266,14 @@ export class DepensesComponent implements OnInit {
 
   labelCategorie(id: string): string {
     return CATEGORIES.find(c => c.id === id)?.nom ?? id ?? '—';
+  }
+
+  resetFilters(): void {
+    this.filterCat.set('');
+    this.filterChamp.set('');
+    this.filterTexte.set('');
+    this.filterDateDeb.set('');
+    this.filterDateFin.set('');
   }
 
   openModal(dep?: any): void { this.editing.set(dep ?? null); this.showModal.set(true); }
