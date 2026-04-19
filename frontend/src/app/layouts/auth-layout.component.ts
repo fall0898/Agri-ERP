@@ -54,14 +54,14 @@ import { filter } from 'rxjs/operators';
           </svg>
           <span>Accueil</span>
         </a>
-        <a routerLink="/cultures" routerLinkActive="border-t-2"
+        <a routerLink="/depenses" routerLinkActive="border-t-2"
            class="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-stone-400 text-xs font-semibold transition-colors"
-           [style.color]="isActive('/cultures') ? '#1A3020' : ''"
-           [style.borderTopColor]="isActive('/cultures') ? '#C49320' : 'transparent'">
+           [style.color]="isActive('/depenses') ? '#1A3020' : ''"
+           [style.borderTopColor]="isActive('/depenses') ? '#C49320' : 'transparent'">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24">
-            <path d="M12 2a10 10 0 0 0-6.88 17.26C6.28 18.5 8 17 8 17s1.5 3 4 3 4-3 4-3 1.72 1.5 2.88 2.26A10 10 0 0 0 12 2z"/>
+            <path d="M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="1" y1="10" x2="23" y2="10"/>
           </svg>
-          <span>Cultures</span>
+          <span>Dépenses</span>
         </a>
         <a routerLink="/finances" routerLinkActive="border-t-2"
            class="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-stone-400 text-xs font-semibold transition-colors"
@@ -72,14 +72,14 @@ import { filter } from 'rxjs/operators';
           </svg>
           <span>Finances</span>
         </a>
-        <a routerLink="/champs" routerLinkActive="border-t-2"
+        <a routerLink="/ventes" routerLinkActive="border-t-2"
            class="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-stone-400 text-xs font-semibold transition-colors"
-           [style.color]="isActive('/champs') ? '#1A3020' : ''"
-           [style.borderTopColor]="isActive('/champs') ? '#C49320' : 'transparent'">
+           [style.color]="isActive('/ventes') ? '#1A3020' : ''"
+           [style.borderTopColor]="isActive('/ventes') ? '#C49320' : 'transparent'">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24">
-            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
           </svg>
-          <span>Champs</span>
+          <span>Ventes</span>
         </a>
         <a routerLink="/stocks" routerLinkActive="border-t-2"
            class="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-stone-400 text-xs font-semibold transition-colors"
