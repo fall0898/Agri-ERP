@@ -1,4 +1,4 @@
-import { Component, input, output, signal, inject, OnInit, effect } from '@angular/core';
+import { Component, input, output, signal, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -141,25 +141,19 @@ export class VenteFormComponent implements OnInit {
     notes:              [''],
   });
 
-  constructor() {
-    effect(() => {
-      const v = this.vente();
-      this.champAutoRempli.set(false);
-      if (v) {
-        this.form.patchValue({
-          produit: v.produit, culture_id: v.culture_id, champ_id: v.champ_id,
-          acheteur: v.acheteur, quantite_kg: v.quantite_kg, unite: v.unite ?? 'kg',
-          prix_unitaire_fcfa: v.prix_unitaire_fcfa,
-          date_vente: v.date_vente?.split('T')[0] ?? v.date_vente,
-          notes: v.notes,
-        });
-      } else {
-        this.form.reset({ date_vente: new Date().toISOString().split('T')[0], unite: 'kg' });
-      }
-    });
+  ngOnInit(): void {
+    const v = this.vente();
+    this.champAutoRempli.set(false);
+    if (v) {
+      this.form.patchValue({
+        produit: v.produit, culture_id: v.culture_id, champ_id: v.champ_id,
+        acheteur: v.acheteur, quantite_kg: v.quantite_kg, unite: v.unite ?? 'kg',
+        prix_unitaire_fcfa: v.prix_unitaire_fcfa,
+        date_vente: v.date_vente?.split('T')[0] ?? v.date_vente,
+        notes: v.notes,
+      });
+    }
   }
-
-  ngOnInit(): void {}
 
   onCultureChange(event: Event): void {
     const id = Number((event.target as HTMLSelectElement).value);
