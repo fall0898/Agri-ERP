@@ -65,17 +65,21 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
                   <input type="radio" formControlName="unite" value="sac" class="accent-primary-600"/>
                   <span class="text-sm text-neutral-700">Sac</span>
                 </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" formControlName="unite" value="caisse" class="accent-primary-600"/>
+                  <span class="text-sm text-neutral-700">Caisse</span>
+                </label>
               </div>
             </div>
             <div>
-              <label class="form-label">Quantité ({{ form.get('unite')?.value === 'sac' ? 'sac' : 'kg' }}) *</label>
+              <label class="form-label">Quantité ({{ form.get('unite')?.value || 'kg' }}) *</label>
               <input type="number" step="0.01" formControlName="quantite_kg" class="form-input" min="0" placeholder="0"/>
               @if (form.get('quantite_kg')?.invalid && form.get('quantite_kg')?.touched) {
                 <p class="form-error">Quantité requise.</p>
               }
             </div>
             <div>
-              <label class="form-label">Prix unitaire (FCFA/{{ form.get('unite')?.value === 'sac' ? 'sac' : 'kg' }}) *</label>
+              <label class="form-label">Prix unitaire (FCFA/{{ form.get('unite')?.value || 'kg' }}) *</label>
               <input type="number" formControlName="prix_unitaire_fcfa" class="form-input" min="0" placeholder="0"/>
               @if (form.get('prix_unitaire_fcfa')?.invalid && form.get('prix_unitaire_fcfa')?.touched) {
                 <p class="form-error">Prix requis.</p>
