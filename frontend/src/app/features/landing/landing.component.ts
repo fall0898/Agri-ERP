@@ -1,809 +1,521 @@
-import { Component, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, PLATFORM_ID, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink, CommonModule],
-  template: `
-  <div class="min-h-screen overflow-x-hidden" style="background:#fafaf9;font-family:'Inter',sans-serif;">
+  imports: [RouterLink],
+  styles: [`
+    :host { display: block; }
 
-    <!-- ══════════ NAVBAR ══════════ -->
-    <nav [class.nav-scrolled]="scrolled()" class="lp-nav fixed top-0 inset-x-0 z-50 transition-all duration-300">
-      <div class="max-w-7xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">
-        <!-- Logo -->
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-               style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 0 18px -4px rgba(34,197,94,.5);">
-            <svg width="17" height="17" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    :root {
+      --g-deep:  #1A3020; --g-mid: #2D5A35; --g-light: #4A8C55;
+      --gold: #C49320; --gold-l: #E8B840;
+      --cream: #F8F5EF; --cream-d: #EDE8DF;
+      --text: #0F1E14; --muted: #4A6352;
+    }
+
+    .lp { font-family: 'DM Sans', system-ui, sans-serif; background: #F8F5EF;
+      color: #0F1E14; overflow-x: hidden; }
+
+    .serif { font-family: 'Playfair Display', Georgia, serif; }
+
+    .btn { display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px; border-radius: 100px; font-size: 15px;
+      font-weight: 600; text-decoration: none; cursor: pointer;
+      transition: all .25s ease; border: none; font-family: inherit; white-space: nowrap; }
+    .btn-gold { background: #C49320; color: #fff; box-shadow: 0 4px 20px rgba(196,147,32,.4); }
+    .btn-gold:hover { background: #E8B840; box-shadow: 0 8px 32px rgba(196,147,32,.55); transform: translateY(-2px); }
+    .btn-ghost { background: rgba(255,255,255,.08); color: rgba(255,255,255,.85);
+      border: 1.5px solid rgba(255,255,255,.22); }
+    .btn-ghost:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.5); }
+    .btn-outline { background: transparent; color: #1A3020; border: 2px solid #1A3020; }
+    .btn-outline:hover { background: #1A3020; color: #fff; }
+
+    .reveal { opacity: 0; transform: translateY(28px);
+      transition: opacity .7s ease, transform .7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+    .d1 { transition-delay: .1s; } .d2 { transition-delay: .2s; }
+    .d3 { transition-delay: .3s; } .d4 { transition-delay: .4s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* NAV */
+    .lp-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      padding: 22px 0; transition: background .35s, padding .35s, box-shadow .35s; }
+    .lp-nav.scrolled { background: rgba(10,21,13,.92); backdrop-filter: blur(16px);
+      padding: 14px 0; box-shadow: 0 2px 32px rgba(0,0,0,.2); }
+    .nav-in { max-width: 1160px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-mark { width: 38px; height: 38px; background: #C49320; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; }
+    .nav-logo-text { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #fff; }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a { color: rgba(255,255,255,.65); text-decoration: none;
+      font-size: 14px; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover { color: #fff; }
+    @media (max-width: 760px) { .nav-links { display: none; } }
+
+    /* HERO */
+    .hero { min-height: 100vh; background: #1A3020; position: relative;
+      display: flex; align-items: center; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+      background-image: repeating-linear-gradient(0deg,transparent,transparent 24px,
+        rgba(74,140,85,.055) 24px,rgba(74,140,85,.055) 26px); }
+    .hero-glow { position: absolute; top: -80px; right: -80px; width: 640px; height: 640px;
+      pointer-events: none; background: radial-gradient(circle,rgba(196,147,32,.13) 0%,transparent 68%); }
+    .hero-glow2 { position: absolute; bottom: -120px; left: -80px; width: 480px; height: 480px;
+      pointer-events: none; background: radial-gradient(circle,rgba(107,66,38,.18) 0%,transparent 70%); }
+    .hero-inner { max-width: 1160px; margin: 0 auto; padding: 130px 24px 90px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+      position: relative; z-index: 2; }
+
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(196,147,32,.14); border: 1px solid rgba(196,147,32,.3);
+      border-radius: 100px; padding: 6px 16px; color: #E8B840;
+      font-size: 13px; font-weight: 500; margin-bottom: 24px;
+      animation: fadeUp .7s ease .05s both; }
+    .hero h1 { font-size: clamp(38px,4.8vw,68px); line-height: 1.06; color: #fff;
+      font-weight: 900; margin-bottom: 24px; animation: fadeUp .8s ease .2s both; }
+    .hero h1 em { display: block; font-style: italic; color: #E8B840; }
+    .hero-sub { font-size: 17px; line-height: 1.75; color: rgba(255,255,255,.62);
+      max-width: 480px; margin-bottom: 40px; animation: fadeUp .7s ease .35s both; }
+    .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+      margin-bottom: 32px; animation: fadeUp .7s ease .5s both; }
+    .hero-trust { display: flex; align-items: center; gap: 8px;
+      color: rgba(255,255,255,.35); font-size: 13px; animation: fadeUp .7s ease .65s both; }
+
+    /* PHONE */
+    .phone-wrap { display: flex; justify-content: center; align-items: center;
+      position: relative; animation: fadeUp .9s ease .3s both; }
+    .phone-halo { position: absolute; width: 340px; height: 340px;
+      background: radial-gradient(circle,rgba(196,147,32,.18) 0%,transparent 68%);
+      border-radius: 50%; pointer-events: none; }
+    .phone { width: 234px; background: #080f09; border-radius: 44px; padding: 11px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.09),0 48px 96px rgba(0,0,0,.55),
+        inset 0 1px 0 rgba(255,255,255,.06);
+      transform: perspective(1000px) rotateY(-7deg) rotateX(4deg);
+      transition: transform .5s ease; }
+    .phone:hover { transform: perspective(1000px) rotateY(-3deg) rotateX(2deg); }
+    .phone-screen { background: #F8F5EF; border-radius: 34px; overflow: hidden; height: 462px; }
+
+    .m-nav { background: #1A3020; padding: 14px 14px 11px;
+      display: flex; align-items: center; justify-content: space-between; }
+    .m-logo { font-family: 'Playfair Display',serif; font-size: 13px; font-weight: 700; color: #fff; }
+    .m-av { width: 24px; height: 24px; background: #C49320; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 10px; font-weight: 700; }
+    .m-body { padding: 12px 12px 8px; }
+    .m-hi { font-size: 10px; color: #4A6352; }
+    .m-title { font-size: 13px; font-weight: 700; color: #0F1E14; margin-bottom: 12px; }
+    .m-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+    .m-kpi { background: #fff; border-radius: 11px; padding: 9px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .m-kpi-l { font-size: 8px; color: #4A6352; margin-bottom: 2px; }
+    .m-kpi-v { font-size: 15px; font-weight: 700; color: #0F1E14; }
+    .m-kpi-d { font-size: 8px; font-weight: 600; margin-top: 1px; }
+    .m-kpi-d.up { color: #27814A; } .m-kpi-d.dn { color: #C0392B; }
+    .m-chart { background: #fff; border-radius: 11px; padding: 9px; margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .m-chart-lbl { font-size: 8px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: #0F1E14; margin-bottom: 7px; }
+    .m-bars { display: flex; align-items: flex-end; gap: 5px; height: 46px; }
+    .m-bg { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .m-bp { display: flex; align-items: flex-end; gap: 2px; height: 38px; }
+    .m-b { width: 7px; border-radius: 3px 3px 0 0; background: #4A8C55; }
+    .m-b.d { background: rgba(196,147,32,.45); }
+    .m-bl { font-size: 6.5px; color: #4A6352; }
+    .m-sec { font-size: 8px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: #0F1E14; margin-bottom: 7px; }
+    .m-task { background: #fff; border-radius: 9px; padding: 7px 9px; margin-bottom: 5px;
+      display: flex; align-items: center; gap: 7px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .m-dot { width: 7px; height: 7px; border-radius: 50%; background: #4A8C55; flex-shrink: 0; }
+    .m-dot.u { background: #E74C3C; }
+    .m-task-t { font-size: 8.5px; font-weight: 500; color: #0F1E14; }
+    .m-task-d { font-size: 7.5px; color: #4A6352; margin-left: auto; }
+
+    /* PROOF BAR */
+    .proof-bar { background: #2D5A35; padding: 22px 0; }
+    .proof-bar-in { max-width: 1160px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 48px; }
+    .ps { text-align: center; }
+    .ps-n { font-family: 'Playfair Display',serif; font-size: 30px; font-weight: 700;
+      color: #E8B840; line-height: 1; }
+    .ps-t { font-size: 12px; color: rgba(255,255,255,.6); margin-top: 4px; }
+    .pdiv { width: 1px; height: 38px; background: rgba(255,255,255,.12); }
+    @media (max-width: 580px) { .pdiv { display: none; } }
+
+    /* SECTIONS */
+    .sec { padding: 96px 0; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    .sec-tag { display: inline-block; padding: 4px 14px; border-radius: 100px;
+      background: rgba(196,147,32,.12); color: #C49320;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 16px; }
+    .sec-h { font-size: clamp(28px,3.5vw,46px); line-height: 1.18; margin-bottom: 16px; }
+    .sec-p { font-size: 17px; color: #4A6352; line-height: 1.75; max-width: 540px; }
+
+    /* PROBLEM */
+    .pb-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 56px; }
+    .pb-card { background: #fff; border-radius: 22px; padding: 32px;
+      border: 1px solid rgba(0,0,0,.06); transition: transform .3s, box-shadow .3s; }
+    .pb-card:hover { transform: translateY(-5px); box-shadow: 0 24px 48px rgba(0,0,0,.09); }
+    .pb-ic { width: 50px; height: 50px; background: #FEF3F2; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 20px; }
+    .pb-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .pb-card p { font-size: 14px; color: #4A6352; line-height: 1.7; }
+
+    /* FEATURES */
+    .feat-sec { background: #1A3020; padding: 96px 0; }
+    .feat-grid { display: grid; grid-template-columns: repeat(3,1fr); margin-top: 56px;
+      border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,.07); }
+    .feat-cell { background: rgba(255,255,255,.025); padding: 36px 30px;
+      border-right: 1px solid rgba(255,255,255,.07);
+      border-bottom: 1px solid rgba(255,255,255,.07); transition: background .3s; }
+    .feat-cell:hover { background: rgba(255,255,255,.07); }
+    .feat-ic { width: 46px; height: 46px; background: rgba(196,147,32,.15); border-radius: 13px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 16px; }
+    .feat-cell h3 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+    .feat-cell p { font-size: 13px; color: rgba(255,255,255,.48); line-height: 1.65; }
+
+    /* TESTIMONIAL */
+    .testi-sec { background: #EDE8DF; padding: 96px 0; }
+    .testi-card { background: #fff; border-radius: 28px; padding: 56px; max-width: 780px;
+      margin: 0 auto; box-shadow: 0 24px 64px rgba(26,48,32,.09);
+      border: 1px solid rgba(26,48,32,.06); text-align: center; }
+    .testi-stars { color: #C49320; font-size: 18px; margin-bottom: 28px; }
+    .testi-quote { font-family: 'Playfair Display',serif; font-size: clamp(20px,2.8vw,30px);
+      font-style: italic; color: #1A3020; line-height: 1.45; margin-bottom: 36px; }
+    .testi-quote span { color: #C49320; }
+    .testi-author { display: flex; align-items: center; justify-content: center; gap: 14px; }
+    .testi-av { width: 52px; height: 52px; background: #4A8C55; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display',serif; font-size: 22px; font-weight: 700; color: #fff; }
+    .testi-n { font-weight: 700; font-size: 16px; text-align: left; }
+    .testi-r { font-size: 13px; color: #4A6352; }
+
+    /* PRICING */
+    .price-sec { padding: 96px 0; }
+    .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+      max-width: 780px; margin: 56px auto 0; }
+    .price-card { background: #fff; border-radius: 24px; padding: 40px;
+      border: 1.5px solid rgba(0,0,0,.08); transition: transform .3s, box-shadow .3s; }
+    .price-card:hover { transform: translateY(-4px); box-shadow: 0 24px 56px rgba(0,0,0,.1); }
+    .price-card.hot { background: #1A3020; border-color: #C49320;
+      box-shadow: 0 0 0 1px #C49320, 0 28px 60px rgba(26,48,32,.35); }
+    .price-badge { display: inline-block; padding: 4px 13px; background: #C49320; color: #fff;
+      border-radius: 100px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 18px; }
+    .price-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .price-card.hot .price-name { color: #fff; }
+    .price-amt { font-family: 'Playfair Display',serif; font-size: 50px; font-weight: 700;
+      line-height: 1.1; margin: 16px 0 4px; }
+    .price-card.hot .price-amt { color: #E8B840; }
+    .price-per { font-size: 13px; color: #4A6352; margin-bottom: 28px; }
+    .price-card.hot .price-per { color: rgba(255,255,255,.45); }
+    .price-list { list-style: none; margin-bottom: 30px; }
+    .price-list li { display: flex; align-items: center; gap: 10px; padding: 9px 0;
+      font-size: 14px; border-bottom: 1px solid rgba(0,0,0,.05); }
+    .price-card.hot .price-list li { color: rgba(255,255,255,.78);
+      border-bottom-color: rgba(255,255,255,.06); }
+    .price-list li::before { content: '✓'; font-weight: 800; font-size: 15px;
+      color: #4A8C55; flex-shrink: 0; }
+    .price-card.hot .price-list li::before { color: #E8B840; }
+    .price-pay { font-size: 11.5px; color: rgba(255,255,255,.35); margin-top: 16px;
+      padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08);
+      display: flex; align-items: center; gap: 6px; }
+
+    /* CTA */
+    .cta-sec { background: #1A3020; padding: 96px 0; text-align: center; position: relative; overflow: hidden; }
+    .cta-sec::before { content: ''; position: absolute; top: -160px; left: 50%;
+      transform: translateX(-50%); width: 900px; height: 450px;
+      background: radial-gradient(ellipse,rgba(196,147,32,.13) 0%,transparent 68%); pointer-events: none; }
+    .cta-sec::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+      background-image: repeating-linear-gradient(0deg,transparent,transparent 24px,
+        rgba(74,140,85,.04) 24px,rgba(74,140,85,.04) 26px); }
+    .cta-inner { position: relative; z-index: 2; }
+    .cta-h { font-size: clamp(30px,4vw,52px); color: #fff; margin-bottom: 18px; }
+    .cta-h em { color: #E8B840; font-style: italic; }
+    .cta-p { color: rgba(255,255,255,.5); font-size: 17px; margin-bottom: 40px; }
+    .cta-trust { margin-top: 22px; font-size: 12.5px; color: rgba(255,255,255,.3); }
+
+    /* FOOTER */
+    footer { background: #070e08; padding: 48px 0 28px; }
+    .foot-in { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 24px; }
+    .foot-logo { font-family: 'Playfair Display',serif; font-size: 20px; font-weight: 700; color: rgba(255,255,255,.8); }
+    .foot-links { display: flex; gap: 28px; list-style: none; }
+    .foot-links a { color: rgba(255,255,255,.35); text-decoration: none; font-size: 13px; transition: color .2s; }
+    .foot-links a:hover { color: rgba(255,255,255,.75); }
+    .foot-copy { font-size: 12px; color: rgba(255,255,255,.2); text-align: center; width: 100%;
+      margin-top: 28px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.05); }
+
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; padding: 110px 24px 64px; }
+      .phone-wrap { display: none; }
+      .pb-grid { grid-template-columns: 1fr; }
+      .feat-grid { grid-template-columns: 1fr 1fr; }
+      .price-grid { grid-template-columns: 1fr; max-width: 440px; }
+    }
+    @media (max-width: 640px) {
+      .feat-grid { grid-template-columns: 1fr; }
+      .testi-card { padding: 32px 20px; }
+      .hero-actions { flex-direction: column; align-items: flex-start; }
+    }
+  `],
+  template: `
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+
+  <div class="lp">
+
+    <!-- NAV -->
+    <nav class="lp-nav" [class.scrolled]="navScrolled">
+      <div class="nav-in">
+        <a routerLink="/" class="nav-logo">
+          <div class="nav-logo-mark">
+            <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M12 2a10 10 0 0 0-6.88 17.26C6.28 18.5 8 17 8 17s1.5 3 4 3 4-3 4-3 1.72 1.5 2.88 2.26A10 10 0 0 0 12 2z"/>
             </svg>
           </div>
-          <span class="text-lg font-bold transition-colors" [style.color]="scrolled()?'#1c1917':'white'">Agri-ERP</span>
-        </div>
-        <!-- Links -->
-        <div class="hidden md:flex items-center gap-7 text-sm font-medium">
-          @for(l of navLinks; track l.label) {
-            <a [href]="l.href" class="lp-navlink transition-colors" [class.lp-navlink-dark]="scrolled()">{{ l.label }}</a>
-          }
-        </div>
-        <!-- CTA -->
-        <div class="flex items-center gap-3">
-          <a routerLink="/connexion" class="text-sm font-medium px-4 py-2 rounded-xl transition-all"
-             [style.color]="scrolled()?'#44403c':'rgba(255,255,255,.85)'"
-             [style.background]="scrolled()?'#f5f5f4':'rgba(255,255,255,.12)'"
-             [style.border]="scrolled()?'1px solid #e5e5e4':'1px solid rgba(255,255,255,.2)'">Connexion</a>
-          <a routerLink="/inscription"
-             class="inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-xl text-white transition-all"
-             style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px -2px rgba(22,163,74,.45);">
-            <span class="hidden sm:inline">Essai gratuit</span>
-            <span class="sm:hidden">Essai</span>
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a>
-        </div>
+          <span class="nav-logo-text serif">Agri-ERP</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#features">Fonctionnalités</a></li>
+          <li><a href="#tarifs">Tarifs</a></li>
+          <li><a routerLink="/connexion">Connexion</a></li>
+        </ul>
+        <a routerLink="/inscription" class="btn btn-gold" style="padding:10px 22px;font-size:14px;">
+          Essai gratuit →
+        </a>
       </div>
     </nav>
 
-    <!-- ══════════ URGENCY BAR ══════════ -->
-    <div class="fixed top-16 inset-x-0 z-40 flex items-center justify-center gap-2 py-1.5 text-xs font-semibold text-white"
-         style="background:linear-gradient(90deg,#166534,#15803d);border-bottom:1px solid rgba(255,255,255,.1);">
-      <span class="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse inline-block shrink-0"></span>
-      <span class="hidden sm:inline">🌾 Offre de lancement — Prix garanti à vie pour les 50 premiers inscrits · Il reste</span>
-      <span class="sm:hidden">🌾 Offre de lancement · Il reste</span>
-      <span class="px-2 py-0.5 rounded-md font-bold whitespace-nowrap" style="background:rgba(255,255,255,.2);">23 places</span>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-glow2"></div>
+      <div class="hero-inner">
+        <div>
+          <div class="hero-badge">🌾 &nbsp;7 jours gratuits — aucune carte bancaire</div>
+          <h1 class="serif">
+            Pilotez votre exploitation
+            <em>comme jamais.</em>
+          </h1>
+          <p class="hero-sub">
+            Le premier ERP agricole pensé pour l'Afrique de l'Ouest.
+            Gérez vos champs, stocks, finances et employés depuis votre téléphone —
+            en FCFA, en français.
+          </p>
+          <div class="hero-actions">
+            <a routerLink="/inscription" class="btn btn-gold" style="padding:16px 32px;font-size:16px;">
+              Commencer gratuitement
+              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a href="#features" class="btn btn-ghost">Voir les fonctionnalités</a>
+          </div>
+          <div class="hero-trust">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Paiement Orange Money &amp; Wave · Données sécurisées · Sans engagement
+          </div>
+        </div>
+
+        <div class="phone-wrap">
+          <div class="phone-halo"></div>
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="m-nav">
+                <span class="m-logo serif">Agri-ERP</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  <div class="m-av">K</div>
+                </div>
+              </div>
+              <div class="m-body">
+                <div class="m-hi">Bonjour, Kadiar 👋</div>
+                <div class="m-title">Tableau de bord</div>
+                <div class="m-kpis">
+                  <div class="m-kpi"><div class="m-kpi-l">Ventes</div><div class="m-kpi-v">6,4M</div><div class="m-kpi-d up">↑ +12%</div></div>
+                  <div class="m-kpi"><div class="m-kpi-l">Dépenses</div><div class="m-kpi-v">5,6M</div><div class="m-kpi-d dn">↑ +3%</div></div>
+                </div>
+                <div class="m-chart">
+                  <div class="m-chart-lbl">Finances — FCFA</div>
+                  <div class="m-bars">
+                    <div class="m-bg"><div class="m-bp"><div class="m-b" style="height:26px"></div><div class="m-b d" style="height:20px"></div></div><div class="m-bl">Jan</div></div>
+                    <div class="m-bg"><div class="m-bp"><div class="m-b" style="height:34px"></div><div class="m-b d" style="height:26px"></div></div><div class="m-bl">Fév</div></div>
+                    <div class="m-bg"><div class="m-bp"><div class="m-b" style="height:38px"></div><div class="m-b d" style="height:30px"></div></div><div class="m-bl">Mar</div></div>
+                    <div class="m-bg"><div class="m-bp"><div class="m-b" style="height:44px"></div><div class="m-b d" style="height:34px"></div></div><div class="m-bl">Avr</div></div>
+                    <div class="m-bg"><div class="m-bp"><div class="m-b" style="height:38px"></div><div class="m-b d" style="height:29px"></div></div><div class="m-bl">Mai</div></div>
+                  </div>
+                </div>
+                <div class="m-sec">Tâches urgentes</div>
+                <div class="m-task"><div class="m-dot u"></div><div class="m-task-t">Traitement parcelle B</div><div class="m-task-d">Auj.</div></div>
+                <div class="m-task"><div class="m-dot"></div><div class="m-task-t">Payer salaires ouvriers</div><div class="m-task-d">Dem.</div></div>
+                <div class="m-task"><div class="m-dot"></div><div class="m-task-t">Récolte oignons — Champ A</div><div class="m-task-d">Sam.</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROOF BAR -->
+    <div class="proof-bar">
+      <div class="proof-bar-in">
+        <div class="ps"><div class="ps-n serif">500+</div><div class="ps-t">Exploitants actifs</div></div>
+        <div class="pdiv"></div>
+        <div class="ps"><div class="ps-n serif">12</div><div class="ps-t">Pays couverts</div></div>
+        <div class="pdiv"></div>
+        <div class="ps"><div class="ps-n serif">4.9★</div><div class="ps-t">Satisfaction client</div></div>
+        <div class="pdiv"></div>
+        <div class="ps"><div class="ps-n serif">2 min</div><div class="ps-t">Pour démarrer</div></div>
+      </div>
     </div>
 
-    <!-- ══════════ HERO ══════════ -->
-    <section class="relative min-h-screen flex items-center overflow-hidden pt-24">
-      <div class="absolute inset-0">
-        <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1800&q=85&fit=crop" alt="" class="w-full h-full object-cover"/>
-        <div class="absolute inset-0" style="background:linear-gradient(120deg,rgba(5,46,22,.82) 0%,rgba(10,50,25,.58) 40%,rgba(0,15,5,.22) 100%);"></div>
-        <div class="absolute inset-0 opacity-10" style="background-image:linear-gradient(rgba(255,255,255,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.15) 1px,transparent 1px);background-size:60px 60px;"></div>
-      </div>
-      <div class="absolute top-1/3 right-1/4 w-80 h-80 rounded-full opacity-15 animate-float pointer-events-none" style="background:radial-gradient(circle,#22c55e,transparent);filter:blur(60px);"></div>
-
-      <div class="relative z-10 max-w-7xl mx-auto px-5 lg:px-8 py-20 w-full">
-        <div class="grid lg:grid-cols-2 gap-16 items-center">
-
-          <!-- Texte -->
-          <div class="animate-fade-up">
-            <div class="inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-sm font-semibold mb-8"
-                 style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.28);color:#4ade80;backdrop-filter:blur(8px);">
-              <div class="flex -space-x-1.5">
-                @for(c of avatarColors; track c) {
-                  <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold text-white"
-                       [style.background]="c" style="border-color:rgba(5,46,22,.8);">{{ c[0] }}</div>
-                }
-              </div>
-              +500 agriculteurs nous font déjà confiance
-            </div>
-
-            <h1 class="text-5xl lg:text-6xl font-bold text-white leading-tight mb-5" style="letter-spacing:-0.025em;">
-              Sachez exactement<br>
-              <span style="background:linear-gradient(90deg,#4ade80,#86efac);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-                combien gagne chaque<br>champ
-              </span>
-              — ce soir.
-            </h1>
-            <p class="text-xl leading-relaxed mb-3" style="color:rgba(255,255,255,.70);">
-              Agri-ERP remplace vos cahiers par un tableau de bord qui suit champs, stocks, employés et finances.
-              <strong class="text-white">En 10 minutes par jour.</strong>
-            </p>
-            <p class="text-base mb-10" style="color:rgba(255,255,255,.4);">
-              Générez les bilans qu'un comptable facturerait 50 000 FCFA — automatiquement.
-            </p>
-
-            <div class="flex flex-wrap gap-4 mb-8">
-              <a routerLink="/inscription"
-                 class="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-base text-white transition-all"
-                 style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 8px 28px -4px rgba(22,163,74,.55);"
-                 onmouseenter="this.style.transform='translateY(-2px)'"
-                 onmouseleave="this.style.transform='none'">
-                Démarrer gratuitement — 7 jours
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-              </a>
-              <a routerLink="/connexion"
-                 class="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-base text-white transition-all"
-                 style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(12px);">
-                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                Voir la démo
-              </a>
-            </div>
-
-            <div class="flex flex-wrap gap-5">
-              @for(t of heroTrust; track t) {
-                <div class="flex items-center gap-2 text-sm" style="color:rgba(255,255,255,.48);">
-                  <svg width="13" height="13" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-                  {{ t }}
-                </div>
-              }
-            </div>
-          </div>
-
-          <!-- Mockup dashboard -->
-          <div class="hidden lg:block animate-fade-up" style="animation-delay:.12s;">
-            <div class="relative">
-              <div class="rounded-3xl p-5 shadow-2xl"
-                   style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);backdrop-filter:blur(24px);">
-                <div class="flex items-center gap-2 mb-4">
-                  <div class="w-3 h-3 rounded-full" style="background:#ef4444;"></div>
-                  <div class="w-3 h-3 rounded-full" style="background:#f59e0b;"></div>
-                  <div class="w-3 h-3 rounded-full" style="background:#22c55e;"></div>
-                  <div class="flex-1 mx-3 h-4 rounded-md" style="background:rgba(255,255,255,.08);"></div>
-                  <span class="text-xs font-medium" style="color:rgba(255,255,255,.35);">Agri-ERP</span>
-                </div>
-                <div class="grid grid-cols-3 gap-2.5 mb-4">
-                  @for(k of mockKpis; track k.label) {
-                    <div class="rounded-2xl p-3.5" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);">
-                      <div class="text-xs mb-1" style="color:rgba(255,255,255,.38);">{{ k.label }}</div>
-                      <div class="font-bold text-white text-sm">{{ k.value }}</div>
-                      <div class="text-xs mt-1 font-semibold" style="color:#4ade80;">{{ k.delta }}</div>
-                    </div>
-                  }
-                </div>
-                <div class="rounded-2xl p-4 mb-3" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);">
-                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-medium" style="color:rgba(255,255,255,.45);">Bénéfice net / mois</span>
-                    <span class="text-xs font-bold" style="color:#4ade80;">+23%</span>
-                  </div>
-                  <div class="flex items-end gap-1.5 h-16">
-                    @for(b of mockBars; track $index) {
-                      <div class="flex-1 rounded-t-md transition-all" [style.height]="b+'px'"
-                           [style.background]="b > 50 ? 'rgba(34,197,94,.85)' : 'rgba(34,197,94,.35)'"></div>
-                    }
-                  </div>
-                </div>
-                @for(r of mockRows; track r.name) {
-                  <div class="flex items-center gap-3 py-2.5" style="border-bottom:1px solid rgba(255,255,255,.05);">
-                    <div class="w-2 h-2 rounded-full shrink-0" [style.background]="r.color"></div>
-                    <span class="flex-1 text-xs" style="color:rgba(255,255,255,.65);">{{ r.name }}</span>
-                    <span class="text-xs font-bold" style="color:#4ade80;">{{ r.val }}</span>
-                  </div>
-                }
-              </div>
-              <!-- Floating badges -->
-              <div class="absolute -left-12 top-8 bg-white rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl animate-float" style="min-width:162px;animation-delay:-1s;">
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style="background:#f0fdf4;">
-                  <svg width="16" height="16" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-                </div>
-                <div>
-                  <div class="text-xs text-neutral-400 leading-tight">Ce mois-ci</div>
-                  <div class="text-sm font-bold text-neutral-900">+412 000 F</div>
-                </div>
-              </div>
-              <div class="absolute -right-10 bottom-14 bg-white rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl animate-float" style="min-width:158px;animation-delay:-2.2s;">
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style="background:#fef3c7;">
-                  <svg width="16" height="16" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                </div>
-                <div>
-                  <div class="text-xs text-neutral-400 leading-tight">Tâches aujourd'hui</div>
-                  <div class="text-sm font-bold text-neutral-900">4 sur 6 ✓</div>
-                </div>
-              </div>
-            </div>
-          </div>
+    <!-- PROBLÈME -->
+    <section class="sec">
+      <div class="container">
+        <div class="reveal"><div class="sec-tag">Le problème</div>
+          <h2 class="serif sec-h">Gérer sans outil, c'est perdre<br>de l'argent chaque saison.</h2>
+          <p class="sec-p">Les exploitants qui gèrent tout de mémoire perdent en moyenne <strong>30% de leur marge</strong> faute de visibilité. Agri-ERP change ça.</p>
         </div>
-      </div>
-
-      <div class="absolute bottom-7 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 animate-bounce">
-        <span class="text-xs" style="color:rgba(255,255,255,.3);">Défiler</span>
-        <svg width="18" height="18" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
-      </div>
-    </section>
-
-    <!-- ══════════ PAIN ══════════ -->
-    <section style="background:#1c1917;" class="py-14">
-      <div class="max-w-5xl mx-auto px-5 lg:px-8 text-center">
-        <p class="text-xs font-bold uppercase tracking-widest mb-8" style="color:rgba(255,255,255,.28);">Vous reconnaissez-vous dans ces situations ?</p>
-        <div class="grid md:grid-cols-3 gap-4">
-          @for(p of pains; track p.q) {
-            <div class="rounded-2xl p-6 text-left" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);">
-              <div class="text-3xl mb-4">{{ p.icon }}</div>
-              <p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.58);">"{{ p.q }}"</p>
-            </div>
-          }
-        </div>
-        <div class="mt-8 inline-flex items-center gap-3 px-6 py-3 rounded-2xl"
-             style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.22);">
-          <svg width="15" height="15" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-          <span class="text-sm font-semibold" style="color:#4ade80;">Agri-ERP résout ces 3 problèmes — en moins de 10 minutes par jour.</span>
+        <div class="pb-grid">
+          <div class="pb-card reveal d1"><div class="pb-ic">📋</div><h3>Pas de visibilité financière</h3><p>Impossible de savoir si la saison est rentable avant la fin. Les dépenses se perdent, les ventes ne sont pas tracées.</p></div>
+          <div class="pb-card reveal d2"><div class="pb-ic">🌿</div><h3>Cultures gérées à l'aveugle</h3><p>Sans suivi des intrants et rendements par parcelle, difficile d'optimiser sa production d'une saison à l'autre.</p></div>
+          <div class="pb-card reveal d3"><div class="pb-ic">👷</div><h3>Salaires et avances non maîtrisés</h3><p>Conflits sur les paiements, salaires oubliés, avances non remboursées — sans outil, c'est du stress permanent.</p></div>
         </div>
       </div>
     </section>
 
-    <!-- ══════════ STATS ══════════ -->
-    <section style="background:linear-gradient(135deg,#052e16,#14532d);" class="py-16 relative overflow-hidden">
-      <div class="absolute inset-0 opacity-15" style="background:radial-gradient(ellipse at 20% 50%,#4ade80,transparent 60%),radial-gradient(ellipse at 80% 50%,#22c55e,transparent 60%);"></div>
-      <div class="relative max-w-5xl mx-auto px-5 lg:px-8 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-        @for(s of stats; track s.label) {
-          <div>
-            <div class="text-4xl lg:text-5xl font-bold text-white mb-1.5 tabular-nums">{{ s.value }}</div>
-            <div class="text-sm font-medium" style="color:rgba(74,222,128,.65);">{{ s.label }}</div>
-          </div>
-        }
-      </div>
-    </section>
-
-    <!-- ══════════ BÉNÉFICES ══════════ -->
-    <section class="py-24">
-      <div class="max-w-6xl mx-auto px-5 lg:px-8">
-        <div class="text-center mb-16">
-          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-5"
-               style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">
-            Ce que vous gagnez vraiment
-          </div>
-          <h2 class="text-4xl font-bold text-neutral-900 mb-4" style="letter-spacing:-0.025em;">
-            Pas un logiciel.<br>
-            <span style="background:linear-gradient(135deg,#16a34a,#22c55e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Un associé qui compte tout.</span>
-          </h2>
-          <p class="text-lg text-neutral-500 max-w-xl mx-auto">Chaque minute dans Agri-ERP produit des données que vous pourrez montrer à votre banque et vos associés.</p>
+    <!-- FEATURES -->
+    <section class="feat-sec" id="features">
+      <div class="container">
+        <div class="reveal" style="text-align:center;">
+          <div class="sec-tag" style="background:rgba(196,147,32,.15);color:#E8B840;">La solution</div>
+          <h2 class="serif sec-h" style="color:#fff;max-width:620px;margin:0 auto;">Tout ce dont votre exploitation<br>a besoin. Un seul outil.</h2>
         </div>
-
-        <div class="grid md:grid-cols-2 gap-5">
-          @for(b of benefits; track b.title) {
-            <div class="flex gap-5 p-7 rounded-3xl bg-white group cursor-default"
-                 style="border:1px solid #f0efee;box-shadow:0 2px 8px rgba(0,0,0,.03);transition:all .2s;"
-                 onmouseenter="this.style.boxShadow='0 16px 40px -8px rgba(22,163,74,.12)';this.style.borderColor='#bbf7d0';this.style.transform='translateY(-2px)'"
-                 onmouseleave="this.style.boxShadow='0 2px 8px rgba(0,0,0,.03)';this.style.borderColor='#f0efee';this.style.transform='none'">
-              <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 text-2xl" [style.background]="b.bg">{{ b.icon }}</div>
-              <div>
-                <h3 class="font-bold text-neutral-900 mb-1.5">{{ b.title }}</h3>
-                <p class="text-sm text-neutral-500 leading-relaxed mb-3">{{ b.desc }}</p>
-                <div class="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full" [style.background]="b.tagBg" [style.color]="b.tagColor">
-                  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-                  {{ b.result }}
-                </div>
-              </div>
-            </div>
-          }
+        <div class="feat-grid">
+          <div class="feat-cell reveal d1"><div class="feat-ic">🗺️</div><h3>Gestion des champs</h3><p>Suivez chaque parcelle, culture, rendement. Historique complet par champ, alertes et calendrier agricole.</p></div>
+          <div class="feat-cell reveal d2"><div class="feat-ic">📦</div><h3>Stocks &amp; intrants</h3><p>Alertes de seuil automatiques. Mouvements de stock tracés. Gestion des semences, engrais et produits phyto.</p></div>
+          <div class="feat-cell reveal d3"><div class="feat-ic">💰</div><h3>Finances complètes</h3><p>Dépenses, ventes, bilan net en FCFA. Comparaison de saisons. Export Excel pour votre comptable.</p></div>
+          <div class="feat-cell reveal d1"><div class="feat-ic">👷</div><h3>Employés &amp; salaires</h3><p>Fiche employé, paiement des salaires, avances individuelles remboursables. Tout tracé automatiquement.</p></div>
+          <div class="feat-cell reveal d2"><div class="feat-ic">🤖</div><h3>Diagnostic IA des plantes</h3><p>Photographiez une maladie → diagnostic et traitement adapté à l'Afrique de l'Ouest. Powered by Claude AI.</p></div>
+          <div class="feat-cell reveal d3"><div class="feat-ic">⛅</div><h3>Météo par parcelle</h3><p>Prévisions météo localisées pour chaque champ. Anticipez les risques climatiques avant qu'il ne soit trop tard.</p></div>
         </div>
       </div>
     </section>
 
-    <!-- ══════════ VALUE STACK ══════════ -->
-    <section style="background:#fafaf9;border-top:1px solid #f0efee;border-bottom:1px solid #f0efee;" class="py-20">
-      <div class="max-w-4xl mx-auto px-5 lg:px-8">
-        <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold text-neutral-900 mb-3" style="letter-spacing:-0.02em;">Ce que vous obtenez — et ce que ça vaut</h2>
-          <p class="text-neutral-500">Séparément, ces outils vous coûteraient une fortune chaque mois.</p>
-        </div>
-        <div class="bg-white rounded-3xl overflow-hidden" style="border:1px solid #f0efee;box-shadow:0 4px 24px rgba(0,0,0,.05);">
-          @for(item of valueStack; track item.name; let last = $last) {
-            <div class="flex items-center gap-4 px-7 py-4" [style.border-bottom]="last?'none':'1px solid #f8f7f6'">
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style="background:#f0fdf4;">
-                <svg width="13" height="13" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-              </div>
-              <span class="flex-1 text-sm font-medium text-neutral-800">{{ item.name }}</span>
-              <span class="text-sm font-bold tabular-nums" style="color:#d1d5db;text-decoration:line-through;">{{ item.price }}</span>
-            </div>
-          }
-          <div class="px-7 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" style="background:linear-gradient(135deg,#052e16,#134e2a);">
-            <div>
-              <span class="text-xs font-bold uppercase tracking-widest" style="color:rgba(74,222,128,.7);">Valeur totale estimée</span>
-              <div class="text-2xl font-bold text-white opacity-50 line-through tabular-nums mt-0.5">65 000 FCFA/mois</div>
-            </div>
-            <div class="text-right">
-              <span class="text-xs font-bold uppercase tracking-widest" style="color:rgba(74,222,128,.7);">Votre prix aujourd'hui</span>
-              <div class="text-4xl font-bold text-white tabular-nums mt-0.5">10 000 <span class="text-base font-normal opacity-50">FCFA/mois</span></div>
-            </div>
-          </div>
-        </div>
-        <p class="text-center text-sm text-neutral-400 mt-5">
-          Soit <strong class="text-neutral-700">333 FCFA par jour</strong> — pour piloter toute votre exploitation.
-        </p>
-      </div>
-    </section>
-
-    <!-- ══════════ FONCTIONNALITÉS ══════════ -->
-    <section id="fonctionnalites" class="py-24">
-      <div class="max-w-7xl mx-auto px-5 lg:px-8">
-        <div class="text-center mb-16">
-          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-5"
-               style="background:#f0fdf4;color:#16a34a;border:1px solid #dcfce7;">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            15 modules inclus, aucun supplément
-          </div>
-          <h2 class="text-4xl font-bold text-neutral-900 mb-4" style="letter-spacing:-0.025em;">Tout ce qu'il vous faut,<br>rien de superflu</h2>
-          <p class="text-lg text-neutral-500 max-w-xl mx-auto">Conçu pour un agriculteur, pas pour un comptable.</p>
-        </div>
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          @for(f of features; track f.title) {
-            <div class="group bg-white rounded-2xl p-6 relative overflow-hidden"
-                 style="border:1px solid #f0efee;box-shadow:0 1px 4px rgba(0,0,0,.03);transition:all .2s;"
-                 onmouseenter="this.style.boxShadow='0 12px 32px -6px rgba(22,163,74,.11)';this.style.borderColor='#bbf7d0';this.style.transform='translateY(-2px)'"
-                 onmouseleave="this.style.boxShadow='0 1px 4px rgba(0,0,0,.03)';this.style.borderColor='#f0efee';this.style.transform='none'">
-              <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4 text-xl" [style.background]="f.bg">{{ f.icon }}</div>
-              <h3 class="font-semibold text-neutral-900 mb-2">{{ f.title }}</h3>
-              <p class="text-sm text-neutral-500 leading-relaxed">{{ f.desc }}</p>
-            </div>
-          }
-        </div>
-      </div>
-    </section>
-
-    <!-- ══════════ BENTO ══════════ -->
-    <section class="pb-24 max-w-7xl mx-auto px-5 lg:px-8">
-      <div class="grid md:grid-cols-3 gap-5">
-        <div class="md:col-span-2 rounded-3xl p-8 relative overflow-hidden min-h-56 flex flex-col justify-between"
-             style="background:linear-gradient(135deg,#052e16,#134e2a);">
-          <div class="absolute inset-0 opacity-20" style="background:radial-gradient(circle at 30% 50%,#4ade80,transparent 60%);"></div>
-          <div class="relative">
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold mb-4"
-                 style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.25);">✦ Intelligence Artificielle</div>
-            <h3 class="text-2xl font-bold text-white mb-2">Diagnostic phytosanitaire par IA</h3>
-            <p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.55);">Une photo, 10 secondes : maladie identifiée, traitements disponibles au Sénégal listés immédiatement.</p>
-          </div>
-          <div class="flex gap-2 flex-wrap relative">
-            @for(tag of aiTags; track tag) {
-              <span class="px-3 py-1.5 rounded-full text-xs font-medium" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.1);">{{ tag }}</span>
-            }
-          </div>
-        </div>
-        <div class="rounded-3xl p-8 min-h-56 flex flex-col justify-between" style="background:linear-gradient(160deg,#1e40af,#3b82f6);">
-          <div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background:rgba(255,255,255,.15);">
-            <svg width="22" height="22" fill="none" stroke="white" stroke-width="1.75" stroke-linecap="round" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
-          </div>
-          <div>
-            <h3 class="text-xl font-bold text-white mb-1.5">100% mobile</h3>
-            <p class="text-sm" style="color:rgba(255,255,255,.6);">Gérez depuis votre téléphone, au champ, sans ordinateur.</p>
-          </div>
-        </div>
-        <div class="rounded-3xl p-8 min-h-48 flex flex-col justify-between" style="background:#fffbeb;border:1px solid #fde68a;">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#f59e0b;">
-              <svg width="17" height="17" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
-            </div>
-            <span class="font-bold text-neutral-900">Paiement 100% mobile</span>
-          </div>
-          <p class="text-sm text-neutral-600 leading-relaxed"><strong>Orange Money</strong> ou <strong>Wave</strong>. Pas de carte bancaire requise.</p>
-        </div>
-        <div class="rounded-3xl p-8 min-h-48 flex flex-col justify-between" style="background:#f0fdf4;border:1px solid #bbf7d0;">
-          <div class="w-11 h-11 rounded-2xl flex items-center justify-center mb-3" style="background:#dcfce7;">
-            <svg width="20" height="20" fill="none" stroke="#16a34a" stroke-width="1.75" stroke-linecap="round" viewBox="0 0 24 24"><path d="M1 6l4.5 4.5M6.5 2.5l11 11M16.5 6l4.5 4.5"/><circle cx="12" cy="17" r="3"/></svg>
-          </div>
-          <div>
-            <h3 class="font-bold text-neutral-900 mb-1">Fonctionne hors ligne</h3>
-            <p class="text-sm text-neutral-500">Saisissez sans connexion. Synchronisation automatique au retour du réseau.</p>
-          </div>
-        </div>
-        <div class="rounded-3xl p-8 min-h-48 flex flex-col justify-between" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);">
-          <div class="w-11 h-11 rounded-2xl flex items-center justify-center mb-3" style="background:rgba(255,255,255,.15);">
-            <svg width="20" height="20" fill="none" stroke="white" stroke-width="1.75" stroke-linecap="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
-          </div>
-          <div>
-            <h3 class="font-bold text-white mb-1">Export bilan Excel & PDF</h3>
-            <p class="text-sm" style="color:rgba(255,255,255,.65);">Prêt pour votre banquier en 1 clic. Professionnel.</p>
+    <!-- TÉMOIGNAGE -->
+    <section class="testi-sec">
+      <div class="container">
+        <div class="testi-card reveal">
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-quote serif">"Avant Agri-ERP, je ne savais jamais si ma saison était rentable. Aujourd'hui je vois <span>tout en temps réel</span> — mes ventes, mes dépenses, mes employés. J'ai économisé plus de <span>800 000 FCFA</span> cette saison rien qu'en évitant les pertes de stocks."</p>
+          <div class="testi-author">
+            <div class="testi-av serif">M</div>
+            <div><div class="testi-n">Mamadou Diallo</div><div class="testi-r">Exploitant oignon — Podor, Sénégal</div></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ══════════ TÉMOIGNAGES ══════════ -->
-    <section id="temoignages" style="background:#fafaf9;border-top:1px solid #f0efee;" class="py-24">
-      <div class="max-w-6xl mx-auto px-5 lg:px-8">
-        <div class="text-center mb-14">
-          <div class="flex justify-center gap-0.5 mb-3">
-            @for(s of [1,2,3,4,5]; track s) {
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            }
-          </div>
-          <h2 class="text-4xl font-bold text-neutral-900 mb-2" style="letter-spacing:-0.025em;">Ils ont arrêté les cahiers</h2>
-          <p class="text-neutral-500">Note moyenne <strong class="text-neutral-900">4.9/5</strong> · Plus de 120 avis vérifiés</p>
+    <!-- TARIFS -->
+    <section class="price-sec" id="tarifs">
+      <div class="container" style="text-align:center;">
+        <div class="reveal">
+          <div class="sec-tag">Tarifs</div>
+          <h2 class="serif sec-h">Simple, transparent, africain.</h2>
+          <p class="sec-p" style="margin:0 auto;">Payez via Orange Money ou Wave — depuis votre téléphone. Pas de carte bancaire, pas de surprise.</p>
         </div>
-
-        <!-- Témoignage vedette -->
-        <div class="rounded-3xl p-8 lg:p-10 mb-8 relative overflow-hidden"
-             style="background:linear-gradient(135deg,#052e16,#134e2a);">
-          <div class="absolute -right-10 -top-10 w-56 h-56 rounded-full opacity-10" style="background:radial-gradient(circle,#4ade80,transparent);"></div>
-          <div class="relative grid md:grid-cols-3 gap-8 items-center">
-            <div class="md:col-span-2">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="rgba(74,222,128,.25)" class="mb-5">
-                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
-                <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
-              </svg>
-              <p class="text-xl font-semibold text-white leading-relaxed mb-6" style="letter-spacing:-0.01em;">
-                "Depuis Agri-ERP, je sais exactement ce que je gagne sur chaque parcelle. Mon banquier m'a accordé un crédit de 3 millions FCFA grâce aux bilans que j'ai sortis de l'application."
-              </p>
-              <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white" style="background:linear-gradient(135deg,#16a34a,#22c55e);">O</div>
-                <div>
-                  <div class="font-semibold text-white">Oumar Sall</div>
-                  <div class="text-sm" style="color:rgba(74,222,128,.7);">Agriculteur, Thiès · 8 champs · Client depuis 14 mois</div>
-                </div>
-              </div>
-            </div>
-            <div class="rounded-2xl p-6" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);">
-              <p class="text-xs font-bold uppercase tracking-widest mb-5" style="color:rgba(74,222,128,.7);">Résultats obtenus</p>
-              @for(r of oumarResults; track r.label) {
-                <div class="mb-5 last:mb-0">
-                  <div class="text-2xl font-bold text-white tabular-nums">{{ r.value }}</div>
-                  <div class="text-xs mt-0.5" style="color:rgba(255,255,255,.4);">{{ r.label }}</div>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
-
-        <div class="grid md:grid-cols-3 gap-5">
-          @for(t of temoignages; track t.nom) {
-            <div class="bg-white rounded-3xl p-7 flex flex-col" style="border:1px solid #f0efee;box-shadow:0 2px 8px rgba(0,0,0,.03);">
-              <div class="flex gap-0.5 mb-4">
-                @for(s of [1,2,3,4,5]; track s) {
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                }
-              </div>
-              <p class="text-neutral-600 text-sm leading-relaxed flex-1 mb-5">"{{ t.texte }}"</p>
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0" [style.background]="t.color">{{ t.nom[0] }}</div>
-                <div>
-                  <div class="font-semibold text-neutral-900 text-sm">{{ t.nom }}</div>
-                  <div class="text-neutral-400 text-xs">{{ t.lieu }}</div>
-                </div>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
-    </section>
-
-    <!-- ══════════ TARIFS ══════════ -->
-    <section id="tarifs" class="py-24">
-      <div class="max-w-5xl mx-auto px-5 lg:px-8">
-        <div class="text-center mb-14">
-          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-5"
-               style="background:#f0fdf4;color:#16a34a;border:1px solid #dcfce7;">
-            💡 Transparent, sans surprise
-          </div>
-          <h2 class="text-4xl font-bold text-neutral-900 mb-3" style="letter-spacing:-0.025em;">
-            333 FCFA par jour.<br>C'est tout.
-          </h2>
-          <p class="text-lg text-neutral-500">Pour piloter toute votre exploitation agricole.</p>
-        </div>
-
-        <div class="grid md:grid-cols-3 gap-6 items-start">
-          <!-- Gratuit -->
-          <div class="bg-white rounded-3xl p-8 flex flex-col" style="border:1px solid #f0efee;box-shadow:0 2px 8px rgba(0,0,0,.04);">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-5" style="background:#f0fdf4;">
-              <svg width="18" height="18" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <h3 class="text-xl font-bold text-neutral-900 mb-1">Gratuit</h3>
-            <p class="text-sm text-neutral-400 mb-5">Pour tester sans risque</p>
-            <div class="flex items-baseline gap-1 mb-7">
-              <span class="text-4xl font-bold text-neutral-900">0</span>
-              <span class="text-neutral-400 text-sm">FCFA/mois</span>
-            </div>
-            <ul class="space-y-3 text-sm text-neutral-600 flex-1 mb-8">
-              @for(f of planFree; track f.text) {
-                <li class="flex items-center gap-2.5">
-                  <span [style.color]="f.ok?'#22c55e':'#d1d5db'" class="font-bold text-base leading-none">{{ f.ok?'✓':'✗' }}</span>
-                  <span [class.text-neutral-400]="!f.ok">{{ f.text }}</span>
-                </li>
-              }
+        <div class="price-grid">
+          <div class="price-card reveal d1">
+            <div class="price-name">Essai gratuit</div>
+            <div class="price-amt serif">0</div>
+            <div class="price-per">FCFA · pendant 7 jours complets</div>
+            <ul class="price-list">
+              <li>Accès à toutes les fonctionnalités</li>
+              <li>1 exploitation, 1 utilisateur</li>
+              <li>Support par message</li>
+              <li>Aucune carte bancaire requise</li>
             </ul>
-            <a routerLink="/inscription" class="block text-center py-3 rounded-2xl text-sm font-semibold transition-all"
-               style="border:1.5px solid #22c55e;color:#16a34a;"
-               onmouseenter="this.style.background='#f0fdf4'" onmouseleave="this.style.background='transparent'">
-              Commencer gratuitement
-            </a>
+            <a routerLink="/inscription" class="btn btn-outline" style="width:100%;justify-content:center;">Commencer maintenant</a>
           </div>
-
-          <!-- Pro -->
-          <div class="relative rounded-3xl p-8 flex flex-col" style="background:linear-gradient(145deg,#052e16,#134e2a);box-shadow:0 24px 60px -12px rgba(22,163,74,.35);">
-            <div class="absolute -top-4 left-1/2 -translate-x-1/2">
-              <span class="px-5 py-1.5 rounded-full text-xs font-bold text-white shadow-lg"
-                    style="background:linear-gradient(90deg,#16a34a,#22c55e);">⭐ Le plus populaire</span>
-            </div>
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-5" style="background:rgba(74,222,128,.15);">
-              <svg width="18" height="18" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-1">Pro</h3>
-            <p class="text-sm mb-5" style="color:rgba(74,222,128,.6);">Abonnement Pro : le forfait le plus populaire pour les exploitations qui veulent tout suivre.</p>
-            <div class="flex items-baseline gap-1 mb-2">
-              <span class="text-4xl font-bold text-white tabular-nums">10 000</span>
-              <span class="text-sm" style="color:rgba(255,255,255,.45);">FCFA/mois</span>
-            </div>
-            <p class="text-xs mb-7" style="color:rgba(74,222,128,.6);">ou 100 000 F/an — 2 mois offerts</p>
-            <ul class="space-y-3 text-sm flex-1 mb-8" style="color:rgba(255,255,255,.7);">
-              @for(f of planPro; track f) {
-                <li class="flex items-center gap-2.5">
-                  <svg width="13" height="13" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-                  {{ f }}
-                </li>
-              }
+          <div class="price-card hot reveal d2">
+            <div class="price-badge">Recommandé</div>
+            <div class="price-name">Plan Pro</div>
+            <div class="price-amt serif">10 000</div>
+            <div class="price-per">FCFA / mois · sans engagement</div>
+            <ul class="price-list">
+              <li>Champs &amp; cultures illimités</li>
+              <li>Jusqu'à 2 utilisateurs</li>
+              <li>Export Excel &amp; rapports avancés</li>
+              <li>Diagnostic IA des plantes</li>
+              <li>Météo par parcelle</li>
+              <li>Import CSV en masse</li>
             </ul>
-            <a routerLink="/inscription"
-               class="block text-center py-3.5 rounded-2xl text-sm font-bold text-white transition-all"
-               style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 16px rgba(22,163,74,.4);"
-               onmouseenter="this.style.opacity='0.9'" onmouseleave="this.style.opacity='1'">
-              Démarrer — 7 jours gratuits →
-            </a>
-          </div>
-
-          <!-- Entreprise -->
-          <div class="bg-white rounded-3xl p-8 flex flex-col" style="border:1px solid #f0efee;box-shadow:0 2px 8px rgba(0,0,0,.04);">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-5" style="background:#eff6ff;">
-              <svg width="18" height="18" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <a routerLink="/inscription" class="btn btn-gold" style="width:100%;justify-content:center;">Démarrer l'essai gratuit →</a>
+            <div class="price-pay">
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Orange Money · Wave · Paiement 100% mobile
             </div>
-            <h3 class="text-xl font-bold text-neutral-900 mb-1">Entreprise</h3>
-            <p class="text-sm text-neutral-400 mb-5">Coopératives & ONG</p>
-            <div class="flex items-baseline gap-1 mb-7">
-              <span class="text-3xl font-bold text-neutral-900">Sur devis</span>
-            </div>
-            <ul class="space-y-3 text-sm text-neutral-600 flex-1 mb-8">
-              @for(f of planEntreprise; track f) {
-                <li class="flex items-center gap-2.5">
-                  <svg width="13" height="13" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-                  {{ f }}
-                </li>
-              }
-            </ul>
-            <a href="https://wa.me/221770809798" target="_blank" rel="noopener noreferrer"
-               class="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold transition-all"
-               style="border:1.5px solid #e7e5e4;color:#44403c;"
-               onmouseenter="this.style.background='#f5f5f4'" onmouseleave="this.style.background='transparent'">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-              Nous contacter
-            </a>
           </div>
-        </div>
-
-        <!-- Garantie -->
-        <div class="mt-10 rounded-3xl p-7 flex items-start gap-5" style="background:#f0fdf4;border:1.5px solid #bbf7d0;">
-          <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0" style="background:#dcfce7;">
-            <svg width="26" height="26" fill="none" stroke="#16a34a" stroke-width="1.75" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </div>
-          <div>
-            <h3 class="font-bold text-neutral-900 mb-1.5">Garantie 30 jours — satisfait ou remboursé</h3>
-            <p class="text-sm text-neutral-600 leading-relaxed">Si après 30 jours Agri-ERP ne vous a pas permis d'identifier au moins une dépense inutile ou un champ non rentable, <strong>nous vous remboursons intégralement</strong>. Sans questions, sans délai.</p>
-          </div>
-        </div>
-        <p class="text-center text-sm text-neutral-400 mt-6">✓ 7 jours gratuits &nbsp;·&nbsp; ✓ Sans carte bancaire &nbsp;·&nbsp; ✓ Résiliable à tout moment</p>
-      </div>
-    </section>
-
-    <!-- ══════════ CTA FINAL ══════════ -->
-    <section class="relative py-28 overflow-hidden">
-      <div class="absolute inset-0">
-        <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1600&q=85&fit=crop" alt="" class="w-full h-full object-cover"/>
-        <div class="absolute inset-0" style="background:linear-gradient(135deg,rgba(5,46,22,.82),rgba(15,79,36,.70));"></div>
-        <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 20% 50%,#4ade80,transparent 55%),radial-gradient(circle at 80% 50%,#22c55e,transparent 55%);"></div>
-      </div>
-      <div class="relative z-10 text-center max-w-2xl mx-auto px-5 lg:px-8">
-        <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold mb-8"
-             style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5;">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-          Offre de lancement — expire le 30 avril 2026
-        </div>
-        <h2 class="text-4xl lg:text-5xl font-bold text-white mb-4" style="letter-spacing:-0.025em;">
-          La saison hivernage<br>commence dans 6 semaines.
-        </h2>
-        <p class="text-lg mb-3" style="color:rgba(255,255,255,.58);">
-          Chaque semaine sans Agri-ERP = une semaine de données perdues pour toujours.
-        </p>
-        <p class="text-sm mb-10" style="color:rgba(255,255,255,.38);">
-          Ceux qui configurent leurs champs <strong class="text-white">avant</strong> le début de saison récoltent 3× plus d'insights.
-        </p>
-        <a routerLink="/inscription"
-           class="inline-flex items-center gap-3 px-10 py-5 rounded-2xl font-bold text-lg transition-all"
-           style="background:white;color:#15803d;box-shadow:0 12px 40px rgba(0,0,0,.25);"
-           onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 18px 50px rgba(0,0,0,.3)'"
-           onmouseleave="this.style.transform='none';this.style.boxShadow='0 12px 40px rgba(0,0,0,.25)'">
-          Je démarre maintenant — 7 jours gratuits
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-        <p class="mt-5 text-sm" style="color:rgba(255,255,255,.32);">Aucune carte bancaire · Orange Money &amp; Wave acceptés · Annulable à tout moment</p>
-
-        <div class="mt-10 grid grid-cols-3 gap-4 max-w-md mx-auto">
-          @for(obj of objections; track obj.q) {
-            <div class="rounded-2xl p-4 text-center" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);">
-              <div class="text-xl mb-1.5">{{ obj.icon }}</div>
-              <p class="text-xs font-semibold text-white mb-0.5">{{ obj.q }}</p>
-              <p class="text-xs" style="color:rgba(255,255,255,.42);">{{ obj.a }}</p>
-            </div>
-          }
         </div>
       </div>
     </section>
 
-    <!-- ══════════ WHATSAPP FLOATING BUTTON ══════════ -->
-    <a href="https://wa.me/221770809798" target="_blank" rel="noopener noreferrer"
-       title="Nous contacter sur WhatsApp"
-       class="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl font-semibold text-sm text-white shadow-xl transition-all"
-       style="background:linear-gradient(135deg,#25d366,#128c7e);box-shadow:0 8px 28px -4px rgba(37,211,102,.55);"
-       onmouseenter="this.style.transform='translateY(-3px) scale(1.04)';this.style.boxShadow='0 14px 36px -4px rgba(37,211,102,.65)'"
-       onmouseleave="this.style.transform='none';this.style.boxShadow='0 8px 28px -4px rgba(37,211,102,.55)'">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-      </svg>
-      <span class="hidden sm:inline">WhatsApp</span>
-    </a>
+    <!-- CTA FINALE -->
+    <section class="cta-sec">
+      <div class="cta-inner container">
+        <h2 class="serif cta-h reveal">Votre prochaine saison sera<br><em>votre meilleure saison.</em></h2>
+        <p class="cta-p reveal d1">Rejoignez 500+ exploitants qui pilotent leur ferme avec Agri-ERP.</p>
+        <div class="reveal d2">
+          <a routerLink="/inscription" class="btn btn-gold" style="padding:18px 40px;font-size:17px;">
+            Commencer gratuitement — 7 jours
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+        <p class="cta-trust reveal d3">Aucune carte bancaire · Orange Money &amp; Wave · Résiliable à tout moment</p>
+      </div>
+    </section>
 
-    <!-- ══════════ FOOTER ══════════ -->
-    <footer style="background:#0c0a09;" class="py-14">
-      <div class="max-w-7xl mx-auto px-5 lg:px-8">
-        <div class="grid md:grid-cols-4 gap-10 mb-12">
-          <div class="md:col-span-2">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#16a34a,#22c55e);">
-                <svg width="16" height="16" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              </div>
-              <span class="text-lg font-bold text-white">Agri-ERP</span>
-            </div>
-            <p class="text-sm leading-relaxed mb-5" style="color:rgba(255,255,255,.35);">
-              L'ERP agricole pensé pour l'Afrique francophone. Champs, finances, stocks et équipe dans un seul outil.
-            </p>
-            <div class="flex gap-2">
-              @for(pay of ['Wave','Orange Money']; track pay) {
-                <span class="px-3 py-1.5 rounded-lg text-xs font-medium" style="background:rgba(255,255,255,.06);color:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.08);">{{ pay }}</span>
-              }
-            </div>
-          </div>
-          <div>
-            <h4 class="text-sm font-semibold text-white mb-4">Produit</h4>
-            <ul class="space-y-3 text-sm" style="color:rgba(255,255,255,.38);">
-              @for(l of ['Fonctionnalités','Tarifs','Témoignages','Diagnostic IA']; track l) {
-                <li><a href="#" class="hover:text-white transition-colors">{{ l }}</a></li>
-              }
-            </ul>
-          </div>
-          <div>
-            <h4 class="text-sm font-semibold text-white mb-4">Support</h4>
-            <ul class="space-y-3 text-sm" style="color:rgba(255,255,255,.38);">
-              <li>
-                <a href="https://wa.me/221770809798" target="_blank" rel="noopener noreferrer"
-                   class="flex items-center gap-2 hover:text-white transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  WhatsApp Business
-                </a>
-              </li>
-              @for(l of footerLinks; track l) {
-                <li><a href="#" class="hover:text-white transition-colors">{{ l }}</a></li>
-              }
-            </ul>
-          </div>
+    <!-- FOOTER -->
+    <footer>
+      <div class="container">
+        <div class="foot-in">
+          <div class="foot-logo serif">Agri-ERP</div>
+          <ul class="foot-links">
+            <li><a href="#features">Fonctionnalités</a></li>
+            <li><a href="#tarifs">Tarifs</a></li>
+            <li><a routerLink="/connexion">Connexion</a></li>
+            <li><a routerLink="/inscription">S'inscrire</a></li>
+          </ul>
         </div>
-        <div style="border-top:1px solid rgba(255,255,255,.06);" class="pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p class="text-sm" style="color:rgba(255,255,255,.22);">© 2026 Agri-ERP. Conçu avec ❤️ pour l'agriculture africaine.</p>
-          <div class="flex gap-2 flex-wrap justify-center">
-            @for(c of footerCountries; track c) {
-              <span class="text-xs px-3 py-1 rounded-full" style="background:rgba(255,255,255,.05);color:rgba(255,255,255,.28);">{{ c }}</span>
-            }
-          </div>
-        </div>
+        <div class="foot-copy">© 2025 Agri-ERP — L'ERP agricole de l'Afrique de l'Ouest</div>
       </div>
     </footer>
-  </div>
 
-  <style>
-    .lp-nav { background: transparent; }
-    .lp-nav.nav-scrolled { background: rgba(255,255,255,.96); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(0,0,0,.05); box-shadow: 0 1px 10px rgba(0,0,0,.06); }
-    .lp-navlink { color: rgba(255,255,255,.70); }
-    .lp-navlink:hover { color: white; }
-    .lp-navlink.lp-navlink-dark { color: #78716c; }
-    .lp-navlink.lp-navlink-dark:hover { color: #1c1917; }
-  </style>
+  </div>
   `,
 })
 export class LandingComponent implements OnInit, OnDestroy {
-  scrolled = signal(false);
-  private onScroll = () => this.scrolled.set(window.scrollY > 28);
-  ngOnInit(): void { window.addEventListener('scroll', this.onScroll, { passive: true }); }
-  ngOnDestroy(): void { window.removeEventListener('scroll', this.onScroll); }
+  private platformId = inject(PLATFORM_ID);
+  navScrolled = false;
+  private io?: IntersectionObserver;
 
-  navLinks = [
-    { label: 'Fonctionnalités', href: '#fonctionnalites' },
-    { label: 'Tarifs', href: '#tarifs' },
-    { label: 'Témoignages', href: '#temoignages' },
-  ];
+  @HostListener('window:scroll')
+  onScroll() { this.navScrolled = window.scrollY > 60; }
 
-  avatarColors = ['#16a34a', '#2563eb', '#d97706', '#7c3aed'];
-  heroTrust = ['7 jours gratuits', 'Paiement mobile Orange Money/Wave', 'Résiliable à tout moment'];
+  ngOnInit() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    this.io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); this.io?.unobserve(e.target); } });
+    }, { threshold: 0.1, rootMargin: '0px 0px -56px 0px' });
+    setTimeout(() => {
+      document.querySelectorAll('.reveal').forEach(el => this.io?.observe(el));
+    }, 100);
+  }
 
-  mockKpis = [
-    { label: 'Revenus', value: '1.4M F', delta: '+18% ce mois' },
-    { label: 'Champs', value: '12', delta: '+2 récents' },
-    { label: 'Bénéfice', value: '+412K', delta: '↑ vs N-1' },
-  ];
-  mockBars = [30, 45, 38, 62, 52, 74, 58, 80];
-  mockRows = [
-    { name: 'Champ Oignons — Thiès', val: '+320 000 F', color: '#22c55e' },
-    { name: 'Champ Tomates — Kaolack', val: '+195 000 F', color: '#3b82f6' },
-    { name: 'Champ Mil — Saint-Louis', val: '+87 000 F', color: '#f59e0b' },
-  ];
-
-  stats = [
-    { value: '500+', label: 'Exploitants actifs' },
-    { value: '12', label: 'Pays couverts' },
-    { value: '3 200+', label: 'Champs gérés' },
-    { value: '98%', label: 'Satisfaction client' },
-  ];
-
-  pains = [
-    { icon: '😓', q: 'Je ne sais jamais si ma saison a été rentable avant que tout soit terminé.' },
-    { icon: '📋', q: 'Je paye mes employés mais je ne retrouve plus les traces des avances que je leur ai données.' },
-    { icon: '🏦', q: 'La banque me demande des bilans financiers et je n\'ai rien à leur montrer.' },
-  ];
-
-  benefits = [
-    { icon: '📊', title: 'Vous savez ce que gagne chaque champ — en temps réel', desc: 'Chaque vente et dépense mise à jour instantanément par parcelle. Fini d\'attendre la fin de saison.', result: 'Décision en 30 secondes, pas en 3 semaines', bg: '#f0fdf4', tagBg: '#dcfce7', tagColor: '#15803d' },
-    { icon: '🏦', title: 'Votre banque vous prend enfin au sérieux', desc: 'Exportez un bilan financier 3 feuilles en 1 clic — celui qu\'un comptable facturerait 50 000 FCFA.', result: 'Crédits agricoles plus faciles à obtenir', bg: '#eff6ff', tagBg: '#dbeafe', tagColor: '#1e40af' },
-    { icon: '👥', title: 'Fini les conflits avec vos employés sur les avances', desc: 'Chaque financement, remboursement et salaire tracé. La preuve est là, pour vous et pour eux.', result: 'Zéro litige, relation de confiance', bg: '#fff7ed', tagBg: '#fef3c7', tagColor: '#92400e' },
-    { icon: '🔬', title: 'Vous traitez la bonne maladie, pas la mauvaise', desc: 'Une photo de votre plante malade et l\'IA identifie la maladie + les produits disponibles au Sénégal.', result: 'Réduisez les pertes de culture de 30%', bg: '#f5f3ff', tagBg: '#ede9fe', tagColor: '#5b21b6' },
-  ];
-
-  valueStack = [
-    { name: 'Logiciel de comptabilité agricole', price: '25 000 F/mois' },
-    { name: 'Gestion des stocks & alertes automatiques', price: '8 000 F/mois' },
-    { name: 'Logiciel paie & gestion employés', price: '12 000 F/mois' },
-    { name: 'Diagnostic IA phytosanitaire', price: '5 000 F/consultation' },
-    { name: 'Export bilans Excel (comptable professionnel)', price: '15 000 F/bilan' },
-  ];
-
-  features = [
-    { icon: '🗺️', title: 'Gestion des champs', desc: 'Parcelles, superficies, photos et historique complet par saison.', bg: '#f0fdf4' },
-    { icon: '🌱', title: 'Suivi des cultures', desc: 'Cycles, intrants utilisés, stade et rentabilité par culture.', bg: '#fffbeb' },
-    { icon: '📦', title: 'Stocks & alertes', desc: 'Engrais, semences, pesticides — alerte seuil bas automatique.', bg: '#eff6ff' },
-    { icon: '💸', title: 'Dépenses catégorisées', desc: 'Intrants, salaires, carburant, matériel et financement individuel.', bg: '#fef2f2' },
-    { icon: '💰', title: 'Ventes & Reçus PDF', desc: 'Saisissez une vente, le reçu PDF est généré instantanément.', bg: '#f0fdf4' },
-    { icon: '📊', title: 'Finances & Export Excel', desc: 'Rentabilité par champ, export bilan 3 feuilles en 1 clic.', bg: '#f5f3ff' },
-    { icon: '👥', title: 'Employés & Salaires', desc: 'Équipe, paie, avances et remboursements entièrement tracés.', bg: '#fff7ed' },
-    { icon: '✅', title: 'Tâches & Planning', desc: 'Assignez, suivez, validez. Aucun travail n\'est oublié.', bg: '#ecfdf5' },
-    { icon: '⛅', title: 'Météo agricole locale', desc: 'Prévisions par parcelle pour planifier vos travaux au bon moment.', bg: '#eff6ff' },
-    { icon: '🔔', title: 'Notifications & Emails', desc: 'Alertes automatiques sur stocks, paiements et tâches.', bg: '#fef2f2' },
-    { icon: '📥', title: 'Import CSV', desc: 'Importez vos données existantes en quelques secondes.', bg: '#fffbeb' },
-    { icon: '📲', title: 'Orange Money & Wave', desc: 'Abonnez-vous avec vos solutions de paiement mobile habituelles.', bg: '#fff7ed' },
-  ];
-
-  aiTags = ['Maladies fongiques', 'Ravageurs', 'Carences', 'Traitement local'];
-
-  oumarResults = [
-    { value: '3 000 000 F', label: 'Crédit agricole obtenu grâce aux bilans' },
-    { value: '+34%', label: 'Rentabilité améliorée en 1 saison' },
-    { value: '0 cahier', label: 'Toute la gestion sur téléphone' },
-  ];
-
-  temoignages = [
-    { nom: 'Aïssatou Diop', lieu: 'Kaolack · 3 champs · Pro 8 mois', texte: 'Le suivi des intrants m\'a évité deux ruptures de stock. J\'ai économisé l\'équivalent de 3 abonnements annuels en une seule saison.', color: 'linear-gradient(135deg,#2563eb,#3b82f6)' },
-    { nom: 'Ibrahima Ndiaye', lieu: 'Saint-Louis · 12 champs · Pro 18 mois', texte: 'Je gère 4 employés et 12 parcelles depuis mon téléphone. Le suivi des avances a éliminé tous les conflits au moment de la paie.', color: 'linear-gradient(135deg,#d97706,#f59e0b)' },
-    { nom: 'Fatou Ba', lieu: 'Ziguinchor · 5 champs · Pro 6 mois', texte: 'J\'ai découvert que l\'un de mes champs me coûtait plus qu\'il ne rapportait. Sans Agri-ERP, j\'aurais continué à perdre de l\'argent sans le savoir.', color: 'linear-gradient(135deg,#7c3aed,#8b5cf6)' },
-  ];
-
-  planFree = [
-    { ok: true, text: '1 champ, 1 culture' },
-    { ok: true, text: '1 utilisateur inclus' },
-    { ok: true, text: 'Tableau de bord & suivi dépenses' },
-    { ok: false, text: 'Export Excel & PDF' },
-    { ok: false, text: 'Météo agricole' },
-    { ok: false, text: 'Diagnostic IA' },
-  ];
-
-  planPro = [
-    '20 champs & cultures illimitées',
-    '5 utilisateurs inclus',
-    'Export Excel 3 feuilles & PDF',
-    'Météo agricole par parcelle',
-    'Diagnostic IA illimité',
-    'Import CSV en masse',
-    'Gestion d’abonnement mobile Orange Money/Wave',
-    'Financements & remboursements',
-  ];
-
-  planEntreprise = [
-    'Champs & utilisateurs illimités',
-    'Import données historiques',
-    'API dédiée',
-    'Gestionnaire de compte attitré',
-    'Support prioritaire 7j/7',
-    'Formation équipe incluse',
-  ];
-
-  objections = [
-    { icon: '🕐', q: 'Trop compliqué ?', a: 'Opérationnel en 15 min' },
-    { icon: '📶', q: 'Sans internet ?', a: '100% hors ligne' },
-    { icon: '🔒', q: 'Mes données ?', a: 'Cryptées & privées' },
-  ];
-
-  footerLinks = ['Connexion', 'Inscription', "Conditions d'utilisation", 'Confidentialité'];
-  footerCountries = ['🇸🇳 Sénégal', '🇲🇱 Mali', '🇧🇫 Burkina', "🇨🇮 Côte d'Ivoire"];
+  ngOnDestroy() { this.io?.disconnect(); }
 }
