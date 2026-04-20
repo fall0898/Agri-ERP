@@ -21,9 +21,9 @@ class VenteResource extends JsonResource
             'est_auto_generee'   => $this->est_auto_generee,
             'source_type'        => $this->source_type,
             'source_id'          => $this->source_id,
-            'champ'              => $this->whenLoaded('champ', fn() => ['id' => $this->champ->id, 'nom' => $this->champ->nom]),
-            'culture'            => $this->whenLoaded('culture', fn() => ['id' => $this->culture->id, 'nom' => $this->culture->nom]),
-            'campagne'           => $this->whenLoaded('campagne', fn() => ['id' => $this->campagne->id, 'nom' => $this->campagne->nom]),
+            'champ'              => $this->whenLoaded('champ', fn() => $this->champ ? ['id' => $this->champ->id, 'nom' => $this->champ->nom] : null),
+            'culture'            => $this->whenLoaded('culture', fn() => $this->culture ? ['id' => $this->culture->id, 'nom' => $this->culture->nom] : null),
+            'campagne'           => $this->whenLoaded('campagne', fn() => $this->campagne ? ['id' => $this->campagne->id, 'nom' => $this->campagne->nom] : null),
         ];
     }
 }
