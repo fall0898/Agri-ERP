@@ -312,11 +312,15 @@ import { isPlatformBrowser } from '@angular/common';
         <ul class="nav-links">
           <li><a href="#features">Fonctionnalités</a></li>
           <li><a href="#tarifs">Tarifs</a></li>
-          <li><a routerLink="/connexion">Connexion</a></li>
         </ul>
-        <a routerLink="/inscription" class="btn btn-gold" style="padding:10px 22px;font-size:14px;">
-          Essai gratuit →
-        </a>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <a routerLink="/connexion" class="btn btn-ghost" style="padding:10px 20px;font-size:14px;">
+            Se connecter
+          </a>
+          <a routerLink="/inscription" class="btn btn-gold" style="padding:10px 22px;font-size:14px;">
+            Essai gratuit →
+          </a>
+        </div>
       </div>
     </nav>
 
