@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenant\TenantService;
-use App\Services\WhatsAppNotificationService;
+use App\Services\TelegramNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -13,7 +13,7 @@ class RegisterController extends Controller
 {
     public function __construct(
         private TenantService $tenantService,
-        private WhatsAppNotificationService $whatsApp,
+        private TelegramNotificationService $telegram,
     ) {}
 
     public function __invoke(Request $request): JsonResponse
@@ -43,7 +43,7 @@ class RegisterController extends Controller
         $validated = $validator->validated();
         $result = $this->tenantService->register($validated);
 
-        $this->whatsApp->sendNouvelleInscription($validated);
+        $this->telegram->sendNouvelleInscription($validated);
 
         return response()->json([
             'message' => 'Inscription réussie ! Bienvenue sur Agri-ERP.',

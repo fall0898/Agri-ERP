@@ -53,8 +53,8 @@ return [
         'api_url'      => env('ORANGE_MONEY_API_URL', 'https://api.orange.com/orange-money-webpay/dev/v1'),
     ],
 
-    'callmebot' => [
-        'phone'   => env('CALLMEBOT_PHONE', ''),
-        'api_key' => env('CALLMEBOT_API_KEY', ''),
+    'telegram' => [
+        'token'   => env('TELEGRAM_BOT_TOKEN', ''),
+        'chat_id' => env('TELEGRAM_CHAT_ID', ''),
     ],
 ];
