@@ -9,7 +9,9 @@ interface Tenant {
   nom: string;
   plan: string;
   est_active: boolean;
+  est_suspendue?: boolean;
   pays?: string;
+  plan_expire_at?: string;
   created_at: string;
   users?: { id: number; nom: string; email: string }[];
 }
@@ -185,9 +187,16 @@ interface AdminUser {
                               [style.color]="planColor(tenant.plan)">
                           {{ tenant.plan }}
                         </span>
+                        @if (tenant.plan_expire_at) {
+                          <div class="text-xs text-neutral-400 mt-0.5">exp. {{ tenant.plan_expire_at | dateFr }}</div>
+                        }
                       </td>
                       <td class="py-3 px-4 text-center">
-                        @if (tenant.est_active) {
+                        @if (tenant.est_suspendue) {
+                          <span class="inline-flex items-center gap-1 text-xs bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-medium">
+                            <span class="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>Suspendue
+                          </span>
+                        } @else if (tenant.est_active) {
                           <span class="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">
                             <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>Active
                           </span>
@@ -199,16 +208,27 @@ interface AdminUser {
                       </td>
                       <td class="py-3 px-4 text-neutral-600">{{ tenant.pays || '—' }}</td>
                       <td class="py-3 px-4 text-neutral-500 text-xs">{{ tenant.created_at | dateFr }}</td>
-                      <td class="py-3 px-4 text-center">
-                        <button (click)="toggleTenantActif(tenant)"
-                                [disabled]="toggling() === tenant.id"
-                                class="text-xs px-3 py-1.5 rounded-lg transition-colors font-medium"
-                                [class.bg-red-50]="tenant.est_active"
-                                [class.text-red-600]="tenant.est_active"
-                                [class.bg-green-50]="!tenant.est_active"
-                                [class.text-green-600]="!tenant.est_active">
-                          {{ toggling() === tenant.id ? '...' : (tenant.est_active ? 'Désactiver' : 'Activer') }}
-                        </button>
+                      <td class="py-3 px-4">
+                        <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                          <button (click)="toggleTenantActif(tenant)"
+                                  [disabled]="toggling() === tenant.id"
+                                  class="text-xs px-2.5 py-1.5 rounded-lg transition-colors font-medium"
+                                  [class.bg-red-50]="tenant.est_active"
+                                  [class.text-red-600]="tenant.est_active"
+                                  [class.bg-green-50]="!tenant.est_active"
+                                  [class.text-green-600]="!tenant.est_active">
+                            {{ toggling() === tenant.id ? '...' : (tenant.est_active ? 'Désactiver' : 'Activer') }}
+                          </button>
+                          <button (click)="ouvrirModalPlan(tenant)"
+                                  class="text-xs px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors font-medium">
+                            Plan
+                          </button>
+                          <button (click)="supprimerOrg(tenant)"
+                                  [disabled]="supprimantOrg() === tenant.id"
+                                  class="text-xs px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors">
+                            {{ supprimantOrg() === tenant.id ? '...' : 'Supprimer' }}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   }
@@ -487,6 +507,88 @@ interface AdminUser {
         </div>
       </div>
     }
+
+    <!-- ===== MODAL CHANGER PLAN ===== -->
+    @if (modalPlan()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" (click)="fermerModalPlan()">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md" (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-neutral-100">
+            <div>
+              <h2 class="text-lg font-semibold text-neutral-900">Changer le plan</h2>
+              @if (tenantPlanEdite()) {
+                <p class="text-sm text-neutral-500 mt-0.5">{{ tenantPlanEdite()!.nom }}</p>
+              }
+            </div>
+            <button (click)="fermerModalPlan()" class="text-neutral-400 hover:text-neutral-600 text-2xl leading-none">×</button>
+          </div>
+
+          <form [formGroup]="formPlan" (ngSubmit)="changerPlan()" class="px-6 py-5 space-y-4">
+
+            @if (tenantPlanEdite()) {
+              <div class="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl">
+                <span class="text-sm text-neutral-500">Plan actuel :</span>
+                <span class="text-sm font-semibold capitalize px-2.5 py-0.5 rounded-full"
+                      [style.background-color]="planColor(tenantPlanEdite()!.plan) + '20'"
+                      [style.color]="planColor(tenantPlanEdite()!.plan)">
+                  {{ tenantPlanEdite()!.plan }}
+                </span>
+                @if (tenantPlanEdite()!.plan_expire_at) {
+                  <span class="text-xs text-neutral-400 ml-auto">expire {{ tenantPlanEdite()!.plan_expire_at | dateFr }}</span>
+                }
+              </div>
+            }
+
+            <div>
+              <label class="form-label">Nouveau plan *</label>
+              <select formControlName="plan" class="form-input">
+                <option value="gratuit">Gratuit</option>
+                <option value="pro">Pro</option>
+                <option value="entreprise">Entreprise</option>
+              </select>
+            </div>
+
+            @if (formPlan.value.plan !== 'gratuit') {
+              <div>
+                <label class="form-label">Durée (mois) <span class="text-neutral-400 font-normal">— laisser vide pour la durée par défaut</span></label>
+                <input formControlName="duree_mois" type="number" min="1" max="120" class="form-input"
+                       [placeholder]="formPlan.value.plan === 'pro' ? '12 mois par défaut' : '120 mois par défaut'" />
+              </div>
+            }
+
+            <div class="p-3 rounded-xl text-sm"
+                 [class.bg-blue-50]="formPlan.value.plan === 'pro'"
+                 [class.text-blue-700]="formPlan.value.plan === 'pro'"
+                 [class.bg-purple-50]="formPlan.value.plan === 'entreprise'"
+                 [class.text-purple-700]="formPlan.value.plan === 'entreprise'"
+                 [class.bg-neutral-50]="formPlan.value.plan === 'gratuit'"
+                 [class.text-neutral-600]="formPlan.value.plan === 'gratuit'">
+              @if (formPlan.value.plan === 'gratuit') {
+                Accès limité — 1 champ, 1 utilisateur, 1 culture. Pas d'export ni d'import.
+              } @else if (formPlan.value.plan === 'pro') {
+                Accès Pro — 2 champs, 2 utilisateurs, 3 cultures. Export Excel et import CSV inclus.
+              } @else {
+                Accès Entreprise — illimité sur tous les modules.
+              }
+            </div>
+
+            @if (erreurPlan()) {
+              <p class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ erreurPlan() }}</p>
+            }
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" (click)="fermerModalPlan()"
+                      class="px-4 py-2 text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 text-neutral-700">
+                Annuler
+              </button>
+              <button type="submit" [disabled]="savingPlan()"
+                      class="btn-primary px-5 py-2 text-sm rounded-lg disabled:opacity-60">
+                {{ savingPlan() ? 'Mise à jour...' : 'Appliquer' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
   `,
 })
 export class AdminComponent implements OnInit {
@@ -497,6 +599,7 @@ export class AdminComponent implements OnInit {
   stats = signal<any>(null);
   tenants = signal<Tenant[]>([]);
   toggling = signal<number | null>(null);
+  supprimantOrg = signal<number | null>(null);
 
   onglet = signal<'organisations' | 'utilisateurs'>('organisations');
 
@@ -533,6 +636,17 @@ export class AdminComponent implements OnInit {
     admin_nom:       [''],
     admin_telephone: [''],
     admin_password:  [''],
+  });
+
+  // Modal changer plan
+  modalPlan = signal(false);
+  tenantPlanEdite = signal<Tenant | null>(null);
+  savingPlan = signal(false);
+  erreurPlan = signal('');
+
+  formPlan = this.fb.group({
+    plan:       ['pro', Validators.required],
+    duree_mois: [null as number | null],
   });
 
   recherche = '';
@@ -730,6 +844,60 @@ export class AdminComponent implements OnInit {
           : (err?.error?.message ?? 'Une erreur est survenue.');
         this.erreurOrg.set(msg as string);
         this.savingOrg.set(false);
+      },
+    });
+  }
+
+  supprimerOrg(tenant: Tenant): void {
+    if (!confirm(`Supprimer définitivement "${tenant.nom}" et toutes ses données ?\n\nCette action est irréversible.`)) return;
+    this.supprimantOrg.set(tenant.id);
+    this.api.delete<any>(`/api/admin/tenants/${tenant.id}`).subscribe({
+      next: () => {
+        this.tenants.update(list => list.filter(t => t.id !== tenant.id));
+        this.supprimantOrg.set(null);
+      },
+      error: () => this.supprimantOrg.set(null),
+    });
+  }
+
+  // ── Changer plan ──────────────────────────────────────────────────────────
+  ouvrirModalPlan(tenant: Tenant): void {
+    this.tenantPlanEdite.set(tenant);
+    this.erreurPlan.set('');
+    this.formPlan.reset({ plan: tenant.plan as any, duree_mois: null });
+    this.modalPlan.set(true);
+  }
+
+  fermerModalPlan(): void { this.modalPlan.set(false); }
+
+  changerPlan(): void {
+    if (this.formPlan.invalid) return;
+    const tenant = this.tenantPlanEdite();
+    if (!tenant) return;
+
+    this.savingPlan.set(true);
+    this.erreurPlan.set('');
+
+    const val = this.formPlan.value;
+    const payload: any = { plan: val.plan };
+    if (val.duree_mois) payload['duree_mois'] = val.duree_mois;
+
+    this.api.patch<any>(`/api/admin/tenants/${tenant.id}/plan`, payload).subscribe({
+      next: res => {
+        const updated = res.organisation;
+        this.tenants.update(list =>
+          list.map(t => t.id === tenant.id
+            ? { ...t, plan: updated.plan, plan_expire_at: updated.plan_expire_at, est_suspendue: false }
+            : t
+          )
+        );
+        this.savingPlan.set(false);
+        this.fermerModalPlan();
+      },
+      error: err => {
+        const msg = err?.error?.message ?? 'Une erreur est survenue.';
+        this.erreurPlan.set(msg);
+        this.savingPlan.set(false);
       },
     });
   }

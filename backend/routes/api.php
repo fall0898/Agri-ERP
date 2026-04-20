@@ -243,6 +243,8 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
         Route::post('/tenants', [Admin\TenantController::class, 'store']);
         Route::get('/tenants/{id}', [Admin\TenantController::class, 'show']);
         Route::patch('/tenants/{id}/activer', [Admin\TenantController::class, 'toggleActif']);
+        Route::patch('/tenants/{id}/plan', [Admin\TenantController::class, 'updatePlan']);
+        Route::delete('/tenants/{id}', [Admin\TenantController::class, 'destroy']);
         Route::get('/stats', [Admin\StatsController::class, 'index']);
 
         Route::get('/users', [Admin\UserController::class, 'index']);
@@ -250,14 +252,6 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
         Route::put('/users/{id}', [Admin\UserController::class, 'update']);
         Route::patch('/users/{id}/activer', [Admin\UserController::class, 'toggleActif']);
         Route::delete('/users/{id}', [Admin\UserController::class, 'destroy']);
-
-        // TMP: mise à jour plan organisation (à supprimer après usage)
-        Route::patch('/tenants/{id}/plan', function ($id) {
-            $org = \App\Models\Organisation::findOrFail($id);
-            $plan = request('plan', 'entreprise');
-            $org->update(['plan' => $plan, 'plan_expire_at' => now()->addYears(5)]);
-            return response()->json(['ok' => true, 'plan' => $plan]);
-        });
 
         // TMP: assigner campagne_id aux enregistrements orphelins d'une org (à supprimer après usage)
         Route::post('/tenants/{orgId}/assign-campagne', function ($orgId) {

@@ -114,4 +114,40 @@ class TenantController extends Controller
             'organisation' => $tenant,
         ]);
     }
+
+    public function updatePlan(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'plan'       => 'required|in:gratuit,pro,entreprise',
+            'duree_mois' => 'nullable|integer|min:1|max:120',
+        ]);
+
+        $tenant = Organisation::findOrFail($id);
+
+        $duree = $validated['duree_mois'] ?? null;
+        $planExpire = match ($validated['plan']) {
+            'pro'        => now()->addMonths($duree ?? 12),
+            'entreprise' => now()->addMonths($duree ?? 120),
+            default      => null,
+        };
+
+        $tenant->update([
+            'plan'           => $validated['plan'],
+            'plan_expire_at' => $planExpire,
+            'est_suspendue'  => false,
+        ]);
+
+        return response()->json([
+            'message'      => 'Plan mis à jour avec succès.',
+            'organisation' => $tenant,
+        ]);
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $tenant = Organisation::findOrFail($id);
+        $tenant->delete();
+
+        return response()->json(['message' => 'Organisation supprimée.']);
+    }
 }
