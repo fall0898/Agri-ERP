@@ -19,32 +19,30 @@ class TelegramNotificationService
     public function sendNouvelleInscription(array $data): void
     {
         if (empty($this->token) || empty($this->chatId)) {
+            Log::warning('Telegram: token ou chat_id manquant');
             return;
         }
 
         $pays = $data['pays'] ?? 'Non renseigné';
         $now  = now()->format('d/m/Y à H:i');
 
-        $message = "🌾 *Nouvelle inscription Agri-ERP \!*\n\n"
-            . "👤 Nom : " . $this->escape($data['nom']) . "\n"
-            . "📱 Téléphone : " . $this->escape($data['telephone']) . "\n"
-            . "🏡 Exploitation : " . $this->escape($data['nom_organisation']) . "\n"
-            . "🌍 Pays : " . $this->escape($pays) . "\n"
-            . "🕐 Le : " . $now;
+        $message = "🌾 Nouvelle inscription Agri-ERP !\n\n"
+            . "👤 Nom : {$data['nom']}\n"
+            . "📱 Téléphone : {$data['telephone']}\n"
+            . "🏡 Exploitation : {$data['nom_organisation']}\n"
+            . "🌍 Pays : {$pays}\n"
+            . "🕐 Le : {$now}";
 
         try {
-            Http::timeout(8)->post("https://api.telegram.org/bot{$this->token}/sendMessage", [
-                'chat_id'    => $this->chatId,
-                'text'       => $message,
-                'parse_mode' => 'MarkdownV2',
+            $response = Http::timeout(8)->post("https://api.telegram.org/bot{$this->token}/sendMessage", [
+                'chat_id' => $this->chatId,
+                'text'    => $message,
             ]);
+            if (!$response->successful()) {
+                Log::warning('Telegram notification failed: ' . $response->body());
+            }
         } catch (\Throwable $e) {
-            Log::warning('Telegram notification failed: ' . $e->getMessage());
+            Log::warning('Telegram notification exception: ' . $e->getMessage());
         }
-    }
-
-    private function escape(string $text): string
-    {
-        return preg_replace('/([_*\[\]()~`>#+=|{}.!\-])/', '\\\\$1', $text);
     }
 }
