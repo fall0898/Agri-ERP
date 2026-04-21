@@ -88,6 +88,7 @@ export interface Media {
   champ_id?: number;
   type: 'photo' | 'video';
   fichier_url: string;
+  fichier_path?: string;
   fichier_nom: string;
   taille_octets?: number;
   description?: string;

@@ -163,13 +163,14 @@ class CultureController extends Controller
         $path = $file->store("organisations/{$request->user()->organisation_id}/medias", 'r2');
 
         $media = Media::create([
-            'culture_id' => $culture->id,
-            'type' => $type,
-            'fichier_url' => Storage::disk('r2')->url($path),
-            'fichier_nom' => $file->getClientOriginalName(),
+            'culture_id'    => $culture->id,
+            'type'          => $type,
+            'fichier_url'   => Storage::disk('r2')->url($path),
+            'fichier_path'  => $path,
+            'fichier_nom'   => $file->getClientOriginalName(),
             'taille_octets' => $file->getSize(),
-            'description' => $request->description,
-            'date_prise' => $request->date_prise,
+            'description'   => $request->description,
+            'date_prise'    => $request->date_prise,
         ]);
 
         return response()->json($media, 201);
@@ -183,6 +184,10 @@ class CultureController extends Controller
             $q->whereHas('culture', fn ($c) => $c->where('organisation_id', $orgId))
               ->orWhereHas('champ', fn ($c) => $c->where('organisation_id', $orgId));
         })->findOrFail($id);
+
+        if ($media->fichier_path) {
+            Storage::disk('r2')->delete($media->fichier_path);
+        }
 
         $media->delete();
 

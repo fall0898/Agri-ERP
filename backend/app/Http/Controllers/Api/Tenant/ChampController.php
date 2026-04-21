@@ -156,13 +156,14 @@ class ChampController extends Controller
         $path = $file->store("organisations/{$request->user()->organisation_id}/medias", 'r2');
 
         $media = Media::create([
-            'champ_id' => $champ->id,
-            'type' => $type,
-            'fichier_url' => Storage::disk('r2')->url($path),
-            'fichier_nom' => $file->getClientOriginalName(),
+            'champ_id'      => $champ->id,
+            'type'          => $type,
+            'fichier_url'   => Storage::disk('r2')->url($path),
+            'fichier_path'  => $path,
+            'fichier_nom'   => $file->getClientOriginalName(),
             'taille_octets' => $file->getSize(),
-            'description' => $request->description,
-            'date_prise' => $request->date_prise,
+            'description'   => $request->description,
+            'date_prise'    => $request->date_prise,
         ]);
 
         return response()->json($media, 201);

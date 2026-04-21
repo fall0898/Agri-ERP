@@ -14,7 +14,7 @@ class Media extends Model
     protected $table = 'medias';
 
     protected $fillable = [
-        'culture_id', 'champ_id', 'type', 'fichier_url', 'fichier_nom',
+        'culture_id', 'champ_id', 'type', 'fichier_url', 'fichier_path', 'fichier_nom',
         'taille_octets', 'description', 'date_prise',
     ];
 
