@@ -197,6 +197,7 @@ export class SidebarComponent {
     {
       label: 'Outils',
       items: [
+        { label: 'Galerie',        route: '/galerie',         icon: this.svg('M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M15 13a3 3 0 11-6 0 3 3 0 016 0z') },
         { label: 'Import CSV',     route: '/import',          icon: this.svg('M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-8-4-4-4 4M12 12V4'),  adminOnly: true },
         { label: 'Notifications',  route: '/notifications',   icon: this.svg('M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0'), badge: true },
         { label: 'Utilisateurs',   route: '/utilisateurs',    icon: this.svg('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'), adminOnly: true },

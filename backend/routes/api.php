@@ -78,6 +78,7 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
     Route::get('/champs/{id}/depenses', [Tenant\ChampController::class, 'depenses']);
     Route::get('/champs/{id}/ventes', [Tenant\ChampController::class, 'ventes']);
     Route::get('/champs/{id}/finance', [Tenant\ChampController::class, 'finance']);
+    Route::get('/medias', [Tenant\MediaController::class, 'index']);
     Route::get('/champs/{id}/medias', [Tenant\ChampController::class, 'medias']);
     Route::middleware('App\Http\Middleware\CheckRole:admin,super_admin')->group(function () {
         Route::post('/champs', [Tenant\ChampController::class, 'store'])->middleware('App\Http\Middleware\CheckPlanLimit:champ');

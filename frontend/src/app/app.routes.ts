@@ -113,6 +113,11 @@ export const routes: Routes = [
         title: 'Diagnostic phytosanitaire — Agri-ERP',
       },
       {
+        path: 'galerie',
+        loadComponent: () => import('./features/galerie/galerie.component').then(m => m.GalerieComponent),
+        title: 'Galerie — Agri-ERP',
+      },
+      {
         path: 'rapports',
         redirectTo: '/finances',
         pathMatch: 'full',
