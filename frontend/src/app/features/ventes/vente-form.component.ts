@@ -25,8 +25,8 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
               <p class="form-error">Produit requis.</p>
             }
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="col-span-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
               <label class="form-label">Culture liée</label>
               <select formControlName="culture_id" class="form-input" (change)="onCultureChange($event)">
                 <option value="">Aucune</option>
@@ -54,7 +54,7 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
               <label class="form-label">Acheteur</label>
               <input type="text" formControlName="acheteur" class="form-input" placeholder="Nom de l'acheteur"/>
             </div>
-            <div class="col-span-2">
+            <div class="sm:col-span-2">
               <label class="form-label">Unité de mesure</label>
               <div class="flex gap-3 mt-1">
                 <label class="flex items-center gap-2 cursor-pointer">
@@ -92,7 +92,7 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
                 <p class="form-error">Date requise.</p>
               }
             </div>
-            <div class="col-span-2">
+            <div class="sm:col-span-2">
               <label class="form-label">Notes</label>
               <textarea formControlName="notes" class="form-input h-16 resize-none" placeholder="Informations complémentaires…"></textarea>
             </div>
@@ -103,9 +103,9 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
               <span class="font-bold text-green-700 tabular-nums">{{ (form.value.quantite_kg! * form.value.prix_unitaire_fcfa!) | currencyFcfa }}</span>
             </div>
           }
-          <div class="flex gap-3 pt-2">
-            <button type="button" (click)="ferme.emit()" class="btn-secondary flex-1">Annuler</button>
-            <button type="submit" [disabled]="saving() || form.invalid" class="btn-primary flex-1">
+          <div class="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+            <button type="button" (click)="ferme.emit()" class="btn-secondary h-10 text-sm sm:flex-1">Annuler</button>
+            <button type="submit" [disabled]="saving() || form.invalid" class="btn-primary h-10 text-sm sm:flex-1">
               {{ saving() ? 'Enregistrement…' : (vente() ? 'Modifier' : 'Enregistrer') }}
             </button>
           </div>
