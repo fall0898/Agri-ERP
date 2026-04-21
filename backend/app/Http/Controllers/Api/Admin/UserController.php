@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -90,8 +91,21 @@ class UserController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $user = User::withTrashed()->findOrFail($id);
-        $user->tokens()->delete();
-        $user->forceDelete();
+
+        DB::transaction(function () use ($user) {
+            // Nullify user_id on records that RESTRICT delete but belong to the org
+            DB::table('champs')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('stocks')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('depenses')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('ventes')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('employes')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('imports')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('financements_individuels')->where('user_id', $user->id)->update(['user_id' => null]);
+            DB::table('remboursements_financement')->where('user_id', $user->id)->update(['user_id' => null]);
+
+            $user->tokens()->delete();
+            $user->forceDelete();
+        });
 
         return response()->json(['message' => 'Utilisateur supprimé.']);
     }
