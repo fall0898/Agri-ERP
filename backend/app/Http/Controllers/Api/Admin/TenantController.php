@@ -15,10 +15,11 @@ class TenantController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $tenants = Organisation::withTrashed()
-            ->with(['users' => fn($q) => $q->where('role', 'admin')->select('id', 'organisation_id', 'nom', 'email')])
+        $perPage = min((int) $request->get('per_page', 50), 200);
+
+        $tenants = Organisation::with(['users' => fn($q) => $q->where('role', 'admin')->select('id', 'organisation_id', 'nom', 'email')])
             ->orderByDesc('created_at')
-            ->paginate(20);
+            ->paginate($perPage);
 
         return response()->json($tenants);
     }

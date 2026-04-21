@@ -1,6 +1,7 @@
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
 import { DateFrPipe } from '../../core/pipes/date-fr.pipe';
 
@@ -592,8 +593,9 @@ interface AdminUser {
   `,
 })
 export class AdminComponent implements OnInit {
-  private api = inject(ApiService);
-  private fb = inject(FormBuilder);
+  private api   = inject(ApiService);
+  private notif = inject(NotificationService);
+  private fb    = inject(FormBuilder);
 
   chargement = signal(true);
   stats = signal<any>(null);
@@ -797,8 +799,11 @@ export class AdminComponent implements OnInit {
   supprimerUser(user: AdminUser): void {
     if (!confirm(`Supprimer définitivement ${user.nom} ?`)) return;
     this.api.delete<any>(`/api/admin/users/${user.id}`).subscribe({
-      next: () => this.users.update(list => list.filter(u => u.id !== user.id)),
-      error: () => {},
+      next: () => {
+        this.users.update(list => list.filter(u => u.id !== user.id));
+        this.notif.success(`Utilisateur "${user.nom}" supprimé.`);
+      },
+      error: err => this.notif.error(err?.error?.message || 'Erreur lors de la suppression.'),
     });
   }
 
@@ -835,6 +840,7 @@ export class AdminComponent implements OnInit {
         this.tenants.update(list => [{ ...org, users: [] }, ...list]);
         this.savingOrg.set(false);
         this.fermerModalOrg();
+        this.notif.success('Organisation créée avec succès.');
         if (res.admin) this.chargerUsers();
       },
       error: err => {
@@ -855,8 +861,12 @@ export class AdminComponent implements OnInit {
       next: () => {
         this.tenants.update(list => list.filter(t => t.id !== tenant.id));
         this.supprimantOrg.set(null);
+        this.notif.success(`Organisation "${tenant.nom}" supprimée.`);
       },
-      error: () => this.supprimantOrg.set(null),
+      error: err => {
+        this.supprimantOrg.set(null);
+        this.notif.error(err?.error?.message || 'Erreur lors de la suppression.');
+      },
     });
   }
 
@@ -893,6 +903,7 @@ export class AdminComponent implements OnInit {
         );
         this.savingPlan.set(false);
         this.fermerModalPlan();
+        this.notif.success('Plan mis à jour avec succès.');
       },
       error: err => {
         const msg = err?.error?.message ?? 'Une erreur est survenue.';
@@ -907,12 +918,17 @@ export class AdminComponent implements OnInit {
     this.toggling.set(tenant.id);
     this.api.patch<any>(`/api/admin/tenants/${tenant.id}/activer`, {}).subscribe({
       next: res => {
+        const updated = res.organisation ?? res;
         this.tenants.update(list =>
-          list.map(t => t.id === tenant.id ? { ...t, est_active: res.organisation?.est_active ?? !t.est_active } : t)
+          list.map(t => t.id === tenant.id ? { ...t, est_active: updated.est_active ?? !t.est_active } : t)
         );
         this.toggling.set(null);
+        this.notif.success(updated.est_active ? 'Organisation activée.' : 'Organisation désactivée.');
       },
-      error: () => this.toggling.set(null),
+      error: err => {
+        this.toggling.set(null);
+        this.notif.error(err?.error?.message || 'Erreur lors de la mise à jour.');
+      },
     });
   }
 
