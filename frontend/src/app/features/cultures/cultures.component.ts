@@ -125,8 +125,8 @@ const STATUT_COLORS: Record<string, string> = {
               <button (click)="closeModal()" class="text-neutral-400 hover:text-neutral-600 text-xl">&times;</button>
             </div>
             <form [formGroup]="form" (ngSubmit)="save()" class="p-6 space-y-4">
-              <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
                   <label class="form-label">Nom de la culture *</label>
                   <input type="text" formControlName="nom" class="form-input" placeholder="ex: Mil, Maïs, Tomate..."/>
                   @if (form.get('nom')?.invalid && form.get('nom')?.touched) {
@@ -184,14 +184,10 @@ const STATUT_COLORS: Record<string, string> = {
                   <label class="form-label">Variété</label>
                   <input type="text" formControlName="variete" class="form-input" placeholder="ex: Souna III"/>
                 </div>
-                <div class="col-span-2">
-                  <label class="form-label">Notes</label>
-                  <textarea formControlName="notes" class="form-input h-20 resize-none"></textarea>
-                </div>
               </div>
-              <div class="flex gap-3 pt-2">
-                <button type="button" (click)="closeModal()" class="btn-secondary flex-1 h-10 text-sm">Annuler</button>
-                <button type="submit" [disabled]="saving() || form.invalid" class="btn-primary flex-1 h-10 text-sm">
+              <div class="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+                <button type="button" (click)="closeModal()" class="btn-secondary h-10 text-sm sm:flex-1">Annuler</button>
+                <button type="submit" [disabled]="saving() || form.invalid" class="btn-primary h-10 text-sm sm:flex-1">
                   {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
                 </button>
               </div>
@@ -243,7 +239,6 @@ export class CulturesComponent implements OnInit {
     date_recolte_prevue: [''],
     superficie_cultivee_ha: [null as number | null],
     variete: [''],
-    notes: [''],
   });
 
   ngOnInit(): void {
@@ -277,7 +272,6 @@ export class CulturesComponent implements OnInit {
         date_recolte_prevue: culture.date_recolte_prevue?.split('T')[0] ?? culture.date_recolte_prevue ?? '',
         superficie_cultivee_ha: culture.superficie_cultivee_ha,
         variete: culture.variete,
-        notes: culture.notes,
       });
     } else {
       this.form.reset({ statut: 'en_cours', saison: 'normale', annee: new Date().getFullYear() });
@@ -299,7 +293,6 @@ export class CulturesComponent implements OnInit {
     if (!payload.date_recolte_prevue) delete payload.date_recolte_prevue;
     if (!payload.superficie_cultivee_ha) delete payload.superficie_cultivee_ha;
     if (!payload.variete) delete payload.variete;
-    if (!payload.notes) delete payload.notes;
 
     const req = this.editing()
       ? this.api.put(`/api/cultures/${this.editing().id}`, payload)
