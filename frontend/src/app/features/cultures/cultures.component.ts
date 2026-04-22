@@ -119,75 +119,77 @@ const STATUT_COLORS: Record<string, string> = {
       <!-- Modal -->
       @if (showModal()) {
         <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" (click)="closeModal()">
-          <div class="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-y-auto max-h-[90vh]" (click)="$event.stopPropagation()">
-            <div class="flex items-center justify-between p-6 border-b border-neutral-100">
+          <div class="modal-panel max-w-lg w-full" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between p-6 border-b border-neutral-100 shrink-0">
               <h2 class="font-semibold text-neutral-900">{{ editing() ? 'Modifier la culture' : 'Nouvelle culture' }}</h2>
               <button (click)="closeModal()" class="text-neutral-400 hover:text-neutral-600 text-xl">&times;</button>
             </div>
-            <form [formGroup]="form" (ngSubmit)="save()" class="p-6 space-y-4">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="sm:col-span-2">
-                  <label class="form-label">Nom de la culture *</label>
-                  <input type="text" formControlName="nom" class="form-input" placeholder="ex: Mil, Maïs, Tomate..."/>
-                  @if (form.get('nom')?.invalid && form.get('nom')?.touched) {
-                    <p class="form-error">Nom requis.</p>
-                  }
-                </div>
-                <div>
-                  <label class="form-label">Champ *</label>
-                  <select formControlName="champ_id" class="form-input">
-                    <option value="">Sélectionner...</option>
-                    @for (champ of champs(); track champ.id) {
-                      <option [value]="champ.id">{{ champ.nom }}</option>
+            <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col flex-1 overflow-hidden">
+              <div class="overflow-y-auto flex-1 p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="sm:col-span-2">
+                    <label class="form-label">Nom de la culture *</label>
+                    <input type="text" formControlName="nom" class="form-input" placeholder="ex: Mil, Maïs, Tomate..."/>
+                    @if (form.get('nom')?.invalid && form.get('nom')?.touched) {
+                      <p class="form-error">Nom requis.</p>
                     }
-                  </select>
-                  @if (form.get('champ_id')?.invalid && form.get('champ_id')?.touched) {
-                    <p class="form-error">Champ requis.</p>
-                  }
-                </div>
-                <div>
-                  <label class="form-label">Statut</label>
-                  <select formControlName="statut" class="form-input">
-                    <option value="en_cours">En cours</option>
-                    <option value="recolte">Récoltée</option>
-                    <option value="termine">Terminée</option>
-                    <option value="abandonne">Abandonnée</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="form-label">Saison *</label>
-                  <select formControlName="saison" class="form-input">
-                    <option value="normale">Saison normale</option>
-                    <option value="contre_saison">Contre-saison</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="form-label">Année *</label>
-                  <input type="number" formControlName="annee" class="form-input" [min]="2000" [max]="2100"/>
-                  @if (form.get('annee')?.invalid && form.get('annee')?.touched) {
-                    <p class="form-error">Année requise.</p>
-                  }
-                </div>
-                <div>
-                  <label class="form-label">Date de semis</label>
-                  <input type="date" formControlName="date_semis" class="form-input"/>
-                </div>
-                <div>
-                  <label class="form-label">Date récolte prévue</label>
-                  <input type="date" formControlName="date_recolte_prevue" class="form-input"/>
-                </div>
-                <div>
-                  <label class="form-label">Superficie cultivée (ha)</label>
-                  <input type="number" step="0.01" formControlName="superficie_cultivee_ha" class="form-input"/>
-                </div>
-                <div>
-                  <label class="form-label">Variété</label>
-                  <input type="text" formControlName="variete" class="form-input" placeholder="ex: Souna III"/>
+                  </div>
+                  <div>
+                    <label class="form-label">Champ *</label>
+                    <select formControlName="champ_id" class="form-input">
+                      <option value="">Sélectionner...</option>
+                      @for (champ of champs(); track champ.id) {
+                        <option [value]="champ.id">{{ champ.nom }}</option>
+                      }
+                    </select>
+                    @if (form.get('champ_id')?.invalid && form.get('champ_id')?.touched) {
+                      <p class="form-error">Champ requis.</p>
+                    }
+                  </div>
+                  <div>
+                    <label class="form-label">Statut</label>
+                    <select formControlName="statut" class="form-input">
+                      <option value="en_cours">En cours</option>
+                      <option value="recolte">Récoltée</option>
+                      <option value="termine">Terminée</option>
+                      <option value="abandonne">Abandonnée</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label">Saison *</label>
+                    <select formControlName="saison" class="form-input">
+                      <option value="normale">Saison normale</option>
+                      <option value="contre_saison">Contre-saison</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label">Année *</label>
+                    <input type="number" formControlName="annee" class="form-input" [min]="2000" [max]="2100"/>
+                    @if (form.get('annee')?.invalid && form.get('annee')?.touched) {
+                      <p class="form-error">Année requise.</p>
+                    }
+                  </div>
+                  <div>
+                    <label class="form-label">Date de semis</label>
+                    <input type="date" formControlName="date_semis" class="form-input"/>
+                  </div>
+                  <div>
+                    <label class="form-label">Date récolte prévue</label>
+                    <input type="date" formControlName="date_recolte_prevue" class="form-input"/>
+                  </div>
+                  <div>
+                    <label class="form-label">Superficie cultivée (ha)</label>
+                    <input type="number" step="0.01" formControlName="superficie_cultivee_ha" class="form-input"/>
+                  </div>
+                  <div>
+                    <label class="form-label">Variété</label>
+                    <input type="text" formControlName="variete" class="form-input" placeholder="ex: Souna III"/>
+                  </div>
                 </div>
               </div>
-              <div class="flex flex-col-reverse sm:flex-row gap-3 pt-2">
-                <button type="button" (click)="closeModal()" class="btn-secondary h-10 text-sm sm:flex-1">Annuler</button>
-                <button type="submit" [disabled]="saving() || form.invalid" class="btn-primary h-10 text-sm sm:flex-1">
+              <div class="shrink-0 px-6 py-4 flex flex-col-reverse sm:flex-row gap-3" style="border-top:1px solid #f0efee;">
+                <button type="button" (click)="closeModal()" class="btn-secondary h-11 text-sm sm:flex-1">Annuler</button>
+                <button type="submit" [disabled]="saving() || form.invalid" class="btn-primary h-11 text-sm sm:flex-1">
                   {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
                 </button>
               </div>
