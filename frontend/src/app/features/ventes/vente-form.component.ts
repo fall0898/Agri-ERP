@@ -10,14 +10,15 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
   imports: [ReactiveFormsModule, CurrencyFcfaPipe],
   template: `
     <div class="modal-backdrop" (click)="ferme.emit()">
-      <div class="modal-panel max-w-lg w-full" (click)="$event.stopPropagation()">
-        <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid #f0efee;">
+      <div class="modal-panel max-w-lg w-full flex flex-col" (click)="$event.stopPropagation()">
+        <div class="flex items-center justify-between px-6 py-4 shrink-0" style="border-bottom:1px solid #f0efee;">
           <h2 class="font-semibold text-neutral-900">{{ vente() ? 'Modifier la vente' : 'Nouvelle vente' }}</h2>
           <button (click)="ferme.emit()" class="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition-colors">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
-        <form [formGroup]="form" (ngSubmit)="save()" class="p-6 space-y-4">
+        <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col flex-1 overflow-hidden">
+          <div class="overflow-y-auto flex-1 p-6 space-y-4">
           <div>
             <label class="form-label">Produit vendu *</label>
             <input type="text" formControlName="produit" class="form-input" placeholder="ex: Mil, Tomates, Oignons…"/>
@@ -103,9 +104,11 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
               <span class="font-bold text-green-700 tabular-nums">{{ (form.value.quantite_kg! * form.value.prix_unitaire_fcfa!) | currencyFcfa }}</span>
             </div>
           }
-          <div class="flex flex-col-reverse sm:flex-row gap-3 pt-2">
-            <button type="button" (click)="ferme.emit()" class="btn-secondary h-10 text-sm sm:flex-1">Annuler</button>
-            <button type="submit" [disabled]="saving() || form.invalid" class="btn-primary h-10 text-sm sm:flex-1">
+          </div><!-- fin scroll -->
+          <!-- Boutons collés en bas -->
+          <div class="shrink-0 px-6 py-4 flex flex-col-reverse sm:flex-row gap-3" style="border-top:1px solid #f0efee;">
+            <button type="button" (click)="ferme.emit()" class="btn-secondary h-11 text-sm sm:flex-1">Annuler</button>
+            <button type="submit" [disabled]="saving() || form.invalid" class="btn-primary h-11 text-sm sm:flex-1">
               {{ saving() ? 'Enregistrement…' : (vente() ? 'Modifier' : 'Enregistrer') }}
             </button>
           </div>
