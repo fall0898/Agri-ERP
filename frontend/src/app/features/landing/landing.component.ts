@@ -236,7 +236,7 @@ import { isPlatformBrowser } from '@angular/common';
       display: flex; align-items: center; gap: 6px; }
     .price-essai-tag { display: inline-block; font-size: 11px; font-weight: 700;
       color: #C0392B; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 16px; }
-    .btn-outline-dark { background: transparent; border: 2px solid #D0D5C8; color: #4A6352;
+    .btn-outline-dark { display: flex; align-items: center; justify-content: center; background: transparent; border: 2px solid #D0D5C8; color: #4A6352;
       padding: 13px 24px; border-radius: 12px; font-weight: 600; font-size: 15px;
       text-align: center; display: block; transition: all .18s; }
     .btn-outline-dark:hover { border-color: #4A8C55; color: #1A3020; }
@@ -297,12 +297,20 @@ import { isPlatformBrowser } from '@angular/common';
       .phone-wrap { display: none; }
       .pb-grid { grid-template-columns: 1fr; }
       .feat-grid { grid-template-columns: 1fr 1fr; }
-      .price-grid { grid-template-columns: 1fr; max-width: 480px; }
+      .price-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
     }
     @media (max-width: 640px) {
       .feat-grid { grid-template-columns: 1fr; }
       .testi-card { padding: 32px 20px; }
       .hero-actions { flex-direction: column; align-items: flex-start; }
+      .price-grid { grid-template-columns: 1fr; gap: 16px; }
+      .price-card { padding: 28px 24px; }
+      .price-amt { font-size: 38px; }
+      .price-card.dark .price-amt { font-size: 32px; }
+      .price-name { font-size: 18px; }
+      .price-list { margin-bottom: 20px; }
+      .price-list li { padding: 7px 0; font-size: 14px; }
+      .price-sec { padding: 64px 0; }
     }
   `],
   template: `
