@@ -41,7 +41,7 @@ class FinanceControllerTest extends TestCase
                  ->assertJsonPath('total_ventes', fn($v) => (float)$v === 80000.0);
     }
 
-    public function test_resume_nexclut_pas_les_ventes_auto_generees(): void
+    public function test_resume_exclut_les_ventes_auto_generees(): void
     {
         ['org' => $org] = $this->creerTenantAdmin();
 
@@ -51,6 +51,6 @@ class FinanceControllerTest extends TestCase
         $response = $this->getJson('/api/finance/resume');
 
         $response->assertOk()
-                 ->assertJsonPath('total_ventes', fn($v) => (float)$v === 30000.0);
+                 ->assertJsonPath('total_ventes', fn($v) => (float)$v === 20000.0);
     }
 }
