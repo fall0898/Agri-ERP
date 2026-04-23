@@ -92,7 +92,7 @@ class DepenseController extends Controller
         return new DepenseResource($depense->fresh()->load(['champ:id,nom', 'campagne:id,nom']));
     }
 
-    private function categorieRule(Request $request): Rule
+    private function categorieRule(Request $request): \Illuminate\Validation\Rules\In
     {
         $builtIn = array_column(CategorieDepenseController::BUILT_IN, 'slug');
         $builtIn[] = 'financement_individuel';
