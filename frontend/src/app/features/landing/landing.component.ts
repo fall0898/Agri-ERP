@@ -200,34 +200,46 @@ import { isPlatformBrowser } from '@angular/common';
 
     /* PRICING */
     .price-sec { padding: 96px 0; }
-    .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    .price-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;
       max-width: 780px; margin: 56px auto 0; }
     .price-card { background: #fff; border-radius: 24px; padding: 40px;
       border: 1.5px solid rgba(0,0,0,.08); transition: transform .3s, box-shadow .3s; }
     .price-card:hover { transform: translateY(-4px); box-shadow: 0 24px 56px rgba(0,0,0,.1); }
-    .price-card.hot { background: #1A3020; border-color: #C49320;
-      box-shadow: 0 0 0 1px #C49320, 0 28px 60px rgba(26,48,32,.35); }
+    .price-badge-tag { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 16px; }
+    .price-badge-tag.green { background: #2D5A35; color: #fff; }
+    .price-badge-tag.gold { background: #C49320; color: #fff; }
+    .price-renew { font-size: 11.5px; font-weight: 700; color: #C49320; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; gap: 5px; }
+    .price-card.dark { background: #1A3020; border-color: #2D5A35; }
+    .price-card.dark .price-name { color: #fff; }
+    .price-card.dark .price-amt { color: #fff; font-style: italic; font-size: 38px; }
+    .price-card.dark .price-per { color: rgba(255,255,255,.45); }
+    .price-card.dark .price-list li { color: rgba(255,255,255,.78); border-color: rgba(255,255,255,.07); }
+    .price-card.dark .price-list li::before { color: rgba(255,255,255,.4); }
+    .price-card.dark .price-badge-tag.green { background: #3D7A46; }
+    .price-card.hot { background: #FFFFF8; border-color: #C49320;
+      box-shadow: 0 0 0 2px #C49320, 0 28px 60px rgba(196,147,32,.18); }
     .price-badge { display: inline-block; padding: 4px 13px; background: #C49320; color: #fff;
       border-radius: 100px; font-size: 11px; font-weight: 700;
       text-transform: uppercase; letter-spacing: .5px; margin-bottom: 18px; }
-    .price-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-    .price-card.hot .price-name { color: #fff; }
+    .price-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; color: #1A3020; }
     .price-amt { font-family: 'Playfair Display',serif; font-size: 50px; font-weight: 700;
-      line-height: 1.1; margin: 16px 0 4px; }
-    .price-card.hot .price-amt { color: #E8B840; }
-    .price-per { font-size: 13px; color: #4A6352; margin-bottom: 28px; }
-    .price-card.hot .price-per { color: rgba(255,255,255,.45); }
+      line-height: 1.1; margin: 12px 0 4px; color: #1A3020; }
+    .price-card.hot .price-amt { color: #C49320; }
+    .price-per { font-size: 13px; color: #4A6352; margin-bottom: 12px; }
     .price-list { list-style: none; margin-bottom: 30px; }
     .price-list li { display: flex; align-items: center; gap: 10px; padding: 9px 0;
       font-size: 14px; border-bottom: 1px solid rgba(0,0,0,.05); }
-    .price-card.hot .price-list li { color: rgba(255,255,255,.78);
-      border-bottom-color: rgba(255,255,255,.06); }
     .price-list li::before { content: '✓'; font-weight: 800; font-size: 15px;
       color: #4A8C55; flex-shrink: 0; }
-    .price-card.hot .price-list li::before { color: #E8B840; }
-    .price-pay { font-size: 11.5px; color: rgba(255,255,255,.35); margin-top: 16px;
-      padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08);
+    .price-pay { font-size: 11.5px; color: #6B8C73; margin-top: 16px;
+      padding-top: 14px; border-top: 1px solid rgba(0,0,0,.06);
       display: flex; align-items: center; gap: 6px; }
+    .price-essai-tag { display: inline-block; font-size: 11px; font-weight: 700;
+      color: #C0392B; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 16px; }
+    .btn-outline-dark { background: transparent; border: 2px solid #D0D5C8; color: #4A6352;
+      padding: 13px 24px; border-radius: 12px; font-weight: 600; font-size: 15px;
+      text-align: center; display: block; transition: all .18s; }
+    .btn-outline-dark:hover { border-color: #4A8C55; color: #1A3020; }
 
     /* CTA */
     .cta-sec { background: #1A3020; padding: 96px 0; text-align: center; position: relative; overflow: hidden; }
@@ -285,7 +297,7 @@ import { isPlatformBrowser } from '@angular/common';
       .phone-wrap { display: none; }
       .pb-grid { grid-template-columns: 1fr; }
       .feat-grid { grid-template-columns: 1fr 1fr; }
-      .price-grid { grid-template-columns: 1fr; max-width: 440px; }
+      .price-grid { grid-template-columns: 1fr; max-width: 480px; }
     }
     @media (max-width: 640px) {
       .feat-grid { grid-template-columns: 1fr; }
@@ -461,37 +473,63 @@ import { isPlatformBrowser } from '@angular/common';
           <p class="sec-p" style="margin:0 auto;">Payez via Orange Money ou Wave — depuis votre téléphone. Pas de carte bancaire, pas de surprise.</p>
         </div>
         <div class="price-grid">
-          <div class="price-card reveal d1">
-            <div class="price-name">Essai gratuit</div>
+
+          <!-- Gratuit -->
+          <div class="price-card reveal d1" style="text-align:left;">
+            <div class="text-4xl mb-3">🌱</div>
+            <div class="price-name">Gratuit</div>
             <div class="price-amt serif">0</div>
-            <div class="price-per">FCFA · pendant 7 jours complets</div>
+            <div class="price-per">FCFA</div>
+            <div class="price-essai-tag">⏱ ESSAI 7 JOURS</div>
+            <hr style="border:none;border-top:1px solid #E8EDE5;margin:16px 0 20px;"/>
             <ul class="price-list">
-              <li>Accès à toutes les fonctionnalités</li>
-              <li>1 exploitation, 1 utilisateur</li>
-              <li>Support par message</li>
-              <li>Aucune carte bancaire requise</li>
+              <li>1 champ</li>
+              <li>1 culture</li>
+              <li>1 utilisateur</li>
+              <li>Tableau de bord</li>
+              <li>Dépenses &amp; ventes</li>
             </ul>
-            <a routerLink="/inscription" class="btn btn-outline" style="width:100%;justify-content:center;">Commencer maintenant</a>
+            <a routerLink="/inscription" class="btn-outline-dark">Commencer gratuitement</a>
           </div>
-          <div class="price-card hot reveal d2">
-            <div class="price-badge">Recommandé</div>
-            <div class="price-name">Plan Pro</div>
+
+          <!-- Pro -->
+          <div class="price-card hot reveal d2" style="text-align:left;">
+            <div class="price-badge">⭐ Recommandé</div>
+            <div class="text-4xl mb-3">🌾</div>
+            <div class="price-name">Pro</div>
             <div class="price-amt serif">10 000</div>
-            <div class="price-per">FCFA / mois · sans engagement</div>
+            <div class="price-per">FCFA / mois</div>
+            <div class="price-renew">🔄 MENSUEL RENOUVELABLE</div>
+            <hr style="border:none;border-top:1px solid rgba(196,147,32,.25);margin:0 0 20px;"/>
             <ul class="price-list">
-              <li>Champs &amp; cultures illimités</li>
-              <li>Jusqu'à 2 utilisateurs</li>
-              <li>Export Excel &amp; rapports avancés</li>
-              <li>Diagnostic IA des plantes</li>
-              <li>Météo par parcelle</li>
+              <li>2 champs &amp; 3 cultures</li>
+              <li>2 utilisateurs inclus</li>
+              <li>Export Excel 3 feuilles &amp; PDF</li>
               <li>Import CSV en masse</li>
+              <li>Paiement mobile Orange Money/Wave</li>
             </ul>
-            <a routerLink="/inscription" class="btn btn-gold" style="width:100%;justify-content:center;">Démarrer l'essai gratuit →</a>
-            <div class="price-pay">
-              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              Orange Money · Wave · Paiement 100% mobile
-            </div>
+            <a routerLink="/inscription" class="btn btn-gold" style="width:100%;justify-content:center;">Souscrire au Pro</a>
           </div>
+
+          <!-- Entreprise -->
+          <div class="price-card dark reveal d3" style="text-align:left;">
+            <div class="price-badge-tag green">✦ ENTREPRISE</div>
+            <div class="text-4xl mb-3">🏭</div>
+            <div class="price-name">Entreprise</div>
+            <div class="price-amt serif" style="font-style:italic;">Sur devis</div>
+            <div class="price-per" style="color:rgba(255,255,255,.45);">Contact pour tarification</div>
+            <div class="price-badge-tag green" style="margin-bottom:20px;">✦ ACCOMPAGNEMENT INCLUS</div>
+            <ul class="price-list">
+              <li>Champs &amp; utilisateurs illimités</li>
+              <li>Export &amp; import illimités</li>
+              <li>API dédiée</li>
+              <li>Accompagnement dédié</li>
+              <li>Support prioritaire 7j/7</li>
+              <li>Formation équipe incluse</li>
+            </ul>
+            <a href="mailto:contact@agri-erp.com" class="btn btn-outline" style="width:100%;justify-content:center;border-color:rgba(255,255,255,.25);color:#fff;">Nous contacter</a>
+          </div>
+
         </div>
       </div>
     </section>
