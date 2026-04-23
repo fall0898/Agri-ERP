@@ -63,7 +63,8 @@ class FinanceService
     public function getParCulture(int $organisationId, array $filters = []): array
     {
         $query = Vente::where('organisation_id', $organisationId)
-            ->whereNotNull('culture_id');
+            ->whereNotNull('culture_id')
+            ->where(fn($q) => $q->where('est_auto_generee', false)->orWhereNull('est_auto_generee'));
 
         if (isset($filters['date_debut'])) {
             $query->where('date_vente', '>=', $filters['date_debut']);
@@ -116,6 +117,7 @@ class FinanceService
         $moisDepense = $isPgsql ? "TO_CHAR(date_depense, 'YYYY-MM')" : 'DATE_FORMAT(date_depense, "%Y-%m")';
 
         $ventesParMois = Vente::where('organisation_id', $organisationId)
+            ->where(fn($q) => $q->where('est_auto_generee', false)->orWhereNull('est_auto_generee'))
             ->when($campagneId, fn($q) => $q->where('campagne_id', $campagneId))
             ->select(DB::raw("$moisVente as mois"), DB::raw('SUM(montant_total_fcfa) as total'))
             ->groupBy('mois')
@@ -123,6 +125,7 @@ class FinanceService
             ->pluck('total', 'mois');
 
         $depensesParMois = Depense::where('organisation_id', $organisationId)
+            ->where('categorie', '!=', 'financement_individuel')
             ->when($campagneId, fn($q) => $q->where('campagne_id', $campagneId))
             ->select(DB::raw("$moisDepense as mois"), DB::raw('SUM(montant_fcfa) as total'))
             ->groupBy('mois')
@@ -141,6 +144,7 @@ class FinanceService
     public function getDepensesParCategorie(int $organisationId, ?int $campagneId = null): array
     {
         return Depense::where('organisation_id', $organisationId)
+            ->where('categorie', '!=', 'financement_individuel')
             ->when($campagneId, fn($q) => $q->where('campagne_id', $campagneId))
             ->select('categorie', DB::raw('SUM(montant_fcfa) as total'))
             ->groupBy('categorie')
@@ -172,6 +176,11 @@ class FinanceService
 
     private function applyFilters($ventesQuery, $depensesQuery, array $filters): void
     {
+        // Exclure les entrées auto-générées (remboursements financements)
+        $ventesQuery->where(fn($q) => $q->where('est_auto_generee', false)->orWhereNull('est_auto_generee'));
+        // Exclure les dépenses financement_individuel
+        $depensesQuery->where('categorie', '!=', 'financement_individuel');
+
         if (isset($filters['campagne_id'])) {
             $ventesQuery->where('campagne_id', $filters['campagne_id']);
             $depensesQuery->where('campagne_id', $filters['campagne_id']);

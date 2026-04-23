@@ -104,6 +104,7 @@ class FinanceController extends Controller
             'financement_individuel' => 'Financement individuel', 'autre' => 'Autre',
         ];
         $depensesParCategorie = Depense::where('organisation_id', $orgId)
+            ->where('categorie', '!=', 'financement_individuel')
             ->when(!empty($filters['date_debut']),   fn($q) => $q->where('date_depense', '>=', $filters['date_debut']))
             ->when(!empty($filters['date_fin']),     fn($q) => $q->where('date_depense', '<=', $filters['date_fin']))
             ->when(!empty($filters['campagne_id']),  fn($q) => $q->where('campagne_id', $filters['campagne_id']))

@@ -54,6 +54,7 @@ class DashboardController extends Controller
         $orgId = $request->user()->organisation_id;
 
         $depenses = Depense::where('organisation_id', $orgId)
+            ->where('categorie', '!=', 'financement_individuel')
             ->with(['champ:id,nom', 'user:id,nom'])
             ->orderByDesc('date_depense')
             ->limit(5)
@@ -67,6 +68,7 @@ class DashboardController extends Controller
         $orgId = $request->user()->organisation_id;
 
         $ventes = Vente::where('organisation_id', $orgId)
+            ->where(fn($q) => $q->where('est_auto_generee', false)->orWhereNull('est_auto_generee'))
             ->with(['champ:id,nom', 'culture:id,nom'])
             ->orderByDesc('date_vente')
             ->limit(5)
@@ -139,10 +141,12 @@ class DashboardController extends Controller
             ];
 
             $ventesRecentes   = Vente::where('organisation_id', $orgId)
+                ->where(fn($q) => $q->where('est_auto_generee', false)->orWhereNull('est_auto_generee'))
                 ->with(['champ:id,nom', 'culture:id,nom'])
                 ->orderByDesc('date_vente')->limit(5)->get();
 
             $depensesRecentes = Depense::where('organisation_id', $orgId)
+                ->where('categorie', '!=', 'financement_individuel')
                 ->with(['champ:id,nom', 'user:id,nom'])
                 ->orderByDesc('date_depense')->limit(5)->get();
 
