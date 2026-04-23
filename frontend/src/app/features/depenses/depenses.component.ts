@@ -1,4 +1,5 @@
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -6,36 +7,26 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
 import { DateFrPipe } from '../../core/pipes/date-fr.pipe';
 import { DepenseFormComponent } from './depense-form.component';
 
-// Catégories exactes acceptées par le backend
-const CATEGORIES = [
-  { id: 'intrant', nom: 'Intrant agricole' },
-  { id: 'salaire', nom: 'Salaire' },
-  { id: 'materiel', nom: 'Matériel' },
-  { id: 'carburant', nom: 'Carburant' },
-  { id: 'main_oeuvre', nom: 'Main d\'œuvre' },
-  { id: 'traitement_phytosanitaire', nom: 'Traitement phytosanitaire' },
-  { id: 'transport', nom: 'Transport' },
-  { id: 'irrigation', nom: 'Irrigation' },
-  { id: 'entretien_materiel', nom: 'Entretien matériel' },
-  { id: 'alimentation_betail', nom: 'Alimentation bétail' },
-  { id: 'frais_recolte', nom: 'Frais récolte' },
-  { id: 'financement_individuel', nom: 'Financement individuel' },
-  { id: 'autre', nom: 'Autre' },
-];
-
 @Component({
   selector: 'app-depenses',
   standalone: true,
-  imports: [CurrencyFcfaPipe, DateFrPipe, DepenseFormComponent],
+  imports: [CurrencyFcfaPipe, DateFrPipe, DepenseFormComponent, FormsModule],
   template: `
     <div class="pg-wrap space-y-6">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1>Dépenses</h1>
           <p class="pg-sub">Suivez toutes vos dépenses agricoles</p>
         </div>
         @if (auth.isAdmin()) {
-          <button (click)="openModal()" class="btn-primary h-9 px-4 text-sm">+ Nouvelle dépense</button>
+          <div class="flex gap-2">
+            <button (click)="openCatModal()"
+                    class="btn-secondary h-9 px-3 text-sm flex items-center gap-1.5">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+              Catégories
+            </button>
+            <button (click)="openModal()" class="btn-primary h-9 px-4 text-sm">+ Nouvelle dépense</button>
+          </div>
         }
       </div>
 
@@ -76,8 +67,8 @@ const CATEGORIES = [
             <label class="form-label">Catégorie</label>
             <select class="form-input" (change)="filterCat.set($any($event.target).value)">
               <option value="" [selected]="!filterCat()">Toutes les catégories</option>
-              @for (cat of categories; track cat.id) {
-                <option [value]="cat.id" [selected]="filterCat() === cat.id">{{ cat.nom }}</option>
+              @for (cat of categories(); track cat.slug) {
+                <option [value]="cat.slug" [selected]="filterCat() === cat.slug">{{ cat.nom }}</option>
               }
             </select>
           </div>
@@ -124,7 +115,7 @@ const CATEGORIES = [
                 <div class="font-bold text-red-500 text-base">{{ depense.montant_fcfa | currencyFcfa }}</div>
               </div>
               <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-500 mb-3">
-                <span class="capitalize">{{ labelCategorie(depense.categorie) }}</span>
+                <span>{{ labelCategorie(depense.categorie) }}</span>
                 @if (depense.champ) { <span>· {{ depense.champ.nom }}</span> }
               </div>
               <div class="flex items-center justify-between">
@@ -195,14 +186,66 @@ const CATEGORIES = [
         </div>
       }
 
-      <!-- Modal -->
+      <!-- Modal dépense -->
       @if (showModal()) {
         <app-depense-form
           [depense]="editing()"
           [champs]="champs()"
+          [categories]="categories()"
           (ferme)="closeModal()"
           (sauvegarde)="onSauvegarde()"
         />
+      }
+
+      <!-- Modal catégories -->
+      @if (showCatModal()) {
+        <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" (click)="closeCatModal()">
+          <div class="modal-panel max-w-md w-full" (click)="$event.stopPropagation()">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 shrink-0" style="border-bottom:1px solid #f0efee;">
+              <h2 class="font-semibold text-neutral-900">Catégories de dépenses</h2>
+              <button (click)="closeCatModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition-colors">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            <div class="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+              <!-- Formulaire ajout -->
+              <div class="flex gap-2">
+                <input type="text" [(ngModel)]="newCatNom" class="form-input flex-1" placeholder="Nom de la nouvelle catégorie…"
+                       (keydown.enter)="createCategorie()"/>
+                <button (click)="createCategorie()" [disabled]="!newCatNom.trim() || savingCat()"
+                        class="btn-primary h-10 px-4 text-sm shrink-0">
+                  {{ savingCat() ? '…' : 'Ajouter' }}
+                </button>
+              </div>
+
+              <!-- Liste -->
+              <div class="space-y-1">
+                <p class="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">Toutes les catégories</p>
+                @for (cat of categories(); track cat.slug) {
+                  <div class="flex items-center justify-between px-3 py-2 rounded-lg"
+                       [class.bg-neutral-50]="!cat.custom"
+                       [class.bg-primary-50]="cat.custom">
+                    <span class="text-sm text-neutral-800">{{ cat.nom }}</span>
+                    @if (cat.custom) {
+                      <button (click)="deleteCategorie(cat)"
+                              class="text-xs text-red-500 hover:text-red-700 px-2 py-0.5 rounded hover:bg-red-50 transition-colors">
+                        Supprimer
+                      </button>
+                    } @else {
+                      <span class="text-xs text-neutral-400">Par défaut</span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="shrink-0 px-6 py-4" style="border-top:1px solid #f0efee;">
+              <button (click)="closeCatModal()" class="btn-secondary w-full h-10 text-sm">Fermer</button>
+            </div>
+          </div>
+        </div>
       }
     </div>
   `,
@@ -212,18 +255,20 @@ export class DepensesComponent implements OnInit {
   private notif = inject(NotificationService);
   auth = inject(AuthService);
 
-  readonly categories = CATEGORIES;
-
   loading = signal(true);
   showModal = signal(false);
+  showCatModal = signal(false);
   editing = signal<any>(null);
   depenses = signal<any[]>([]);
   champs = signal<any[]>([]);
+  categories = signal<any[]>([]);
   filterCat = signal('');
   filterChamp = signal('');
   filterTexte = signal('');
   filterDateDeb = signal('');
   filterDateFin = signal('');
+  newCatNom = '';
+  savingCat = signal(false);
 
   hasActiveFilters = computed(() =>
     !!this.filterCat() || !!this.filterChamp() || !!this.filterTexte() || !!this.filterDateDeb() || !!this.filterDateFin()
@@ -251,6 +296,7 @@ export class DepensesComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.loadCategories();
     this.api.get<any>('/api/champs').subscribe({
       next: res => this.champs.set(Array.isArray(res) ? res : res.data?.data ?? res.data ?? []),
     });
@@ -264,8 +310,43 @@ export class DepensesComponent implements OnInit {
     });
   }
 
-  labelCategorie(id: string): string {
-    return CATEGORIES.find(c => c.id === id)?.nom ?? id ?? '—';
+  loadCategories(): void {
+    this.api.get<any[]>('/api/categories-depenses').subscribe({
+      next: res => this.categories.set(Array.isArray(res) ? res : []),
+    });
+  }
+
+  labelCategorie(slug: string): string {
+    return this.categories().find(c => c.slug === slug)?.nom ?? slug ?? '—';
+  }
+
+  openCatModal(): void { this.newCatNom = ''; this.showCatModal.set(true); }
+  closeCatModal(): void { this.showCatModal.set(false); }
+
+  createCategorie(): void {
+    const nom = this.newCatNom.trim();
+    if (!nom) return;
+    this.savingCat.set(true);
+    this.api.post('/api/categories-depenses', { nom }).subscribe({
+      next: () => {
+        this.notif.success('Catégorie créée.');
+        this.newCatNom = '';
+        this.savingCat.set(false);
+        this.loadCategories();
+      },
+      error: err => {
+        this.savingCat.set(false);
+        this.notif.error(err.error?.message || 'Erreur.');
+      },
+    });
+  }
+
+  deleteCategorie(cat: any): void {
+    if (!confirm(`Supprimer la catégorie "${cat.nom}" ?`)) return;
+    this.api.delete(`/api/categories-depenses/${cat.id}`).subscribe({
+      next: () => { this.notif.success('Catégorie supprimée.'); this.loadCategories(); },
+      error: err => this.notif.error(err.error?.message || 'Erreur.'),
+    });
   }
 
   resetFilters(): void {
@@ -277,9 +358,7 @@ export class DepensesComponent implements OnInit {
   }
 
   openModal(dep?: any): void { this.editing.set(dep ?? null); this.showModal.set(true); }
-
   closeModal(): void { this.showModal.set(false); this.editing.set(null); }
-
   onSauvegarde(): void { this.closeModal(); this.load(); }
 
   delete(d: any): void {

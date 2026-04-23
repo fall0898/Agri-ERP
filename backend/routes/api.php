@@ -111,6 +111,13 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
         Route::delete('/depenses/{id}', [Tenant\DepenseController::class, 'destroy']);
     });
 
+    // --- Catégories de dépenses ---
+    Route::get('/categories-depenses', [Tenant\CategorieDepenseController::class, 'index']);
+    Route::middleware('App\Http\Middleware\CheckRole:admin,super_admin')->group(function () {
+        Route::post('/categories-depenses', [Tenant\CategorieDepenseController::class, 'store']);
+        Route::delete('/categories-depenses/{id}', [Tenant\CategorieDepenseController::class, 'destroy']);
+    });
+
     // --- Ventes ---
     Route::get('/ventes', [Tenant\VenteController::class, 'index']);
     Route::get('/ventes/{id}', [Tenant\VenteController::class, 'show']);

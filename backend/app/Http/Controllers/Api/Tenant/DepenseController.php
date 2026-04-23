@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api\Tenant;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DepenseCollection;
 use App\Http\Resources\DepenseResource;
+use App\Models\CategorieDepense;
 use App\Models\Depense;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class DepenseController extends Controller
 {
@@ -42,7 +44,7 @@ class DepenseController extends Controller
         $validated = $request->validate([
             'champ_id' => 'nullable|exists:champs,id',
             'campagne_id' => 'nullable|exists:campagnes_agricoles,id',
-            'categorie' => 'required|in:intrant,salaire,materiel,autre,carburant,main_oeuvre,traitement_phytosanitaire,transport,irrigation,entretien_materiel,alimentation_betail,frais_recolte,financement_individuel',
+            'categorie' => ['required', $this->categorieRule($request)],
             'description' => 'required|string|max:300',
             'montant_fcfa' => 'required|numeric|min:0',
             'date_depense' => 'required|date',
@@ -79,7 +81,7 @@ class DepenseController extends Controller
         $validated = $request->validate([
             'champ_id' => 'nullable|exists:champs,id',
             'campagne_id' => 'nullable|exists:campagnes_agricoles,id',
-            'categorie' => 'sometimes|in:intrant,salaire,materiel,autre,carburant,main_oeuvre,traitement_phytosanitaire,transport,irrigation,entretien_materiel,alimentation_betail,frais_recolte,financement_individuel',
+            'categorie' => ['sometimes', $this->categorieRule($request)],
             'description' => 'sometimes|string|max:300',
             'montant_fcfa' => 'sometimes|numeric|min:0',
             'date_depense' => 'sometimes|date',
@@ -88,6 +90,16 @@ class DepenseController extends Controller
         $depense->update($validated);
 
         return new DepenseResource($depense->fresh()->load(['champ:id,nom', 'campagne:id,nom']));
+    }
+
+    private function categorieRule(Request $request): Rule
+    {
+        $builtIn = array_column(CategorieDepenseController::BUILT_IN, 'slug');
+        $builtIn[] = 'financement_individuel';
+        $custom = CategorieDepense::where('organisation_id', $request->user()->organisation_id)
+            ->pluck('slug')->toArray();
+
+        return Rule::in(array_merge($builtIn, $custom));
     }
 
     public function destroy(Request $request, int $id): JsonResponse

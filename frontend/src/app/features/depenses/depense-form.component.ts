@@ -3,22 +3,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 
-const CATEGORIES = [
-  { id: 'intrant', nom: 'Intrant agricole' },
-  { id: 'salaire', nom: 'Salaire' },
-  { id: 'materiel', nom: 'Matériel' },
-  { id: 'carburant', nom: 'Carburant' },
-  { id: 'main_oeuvre', nom: "Main d'œuvre" },
-  { id: 'traitement_phytosanitaire', nom: 'Traitement phytosanitaire' },
-  { id: 'transport', nom: 'Transport' },
-  { id: 'irrigation', nom: 'Irrigation' },
-  { id: 'entretien_materiel', nom: 'Entretien matériel' },
-  { id: 'alimentation_betail', nom: 'Alimentation bétail' },
-  { id: 'frais_recolte', nom: 'Frais récolte' },
-  { id: 'financement_individuel', nom: 'Financement individuel' },
-  { id: 'autre', nom: 'Autre' },
-];
-
 @Component({
   selector: 'app-depense-form',
   standalone: true,
@@ -57,8 +41,8 @@ const CATEGORIES = [
               <label class="form-label">Catégorie *</label>
               <select formControlName="categorie" class="form-input">
                 <option value="">Sélectionner...</option>
-                @for (cat of categories; track cat.id) {
-                  <option [value]="cat.id">{{ cat.nom }}</option>
+                @for (cat of categories(); track cat.slug) {
+                  <option [value]="cat.slug">{{ cat.nom }}</option>
                 }
               </select>
               @if (form.get('categorie')?.invalid && form.get('categorie')?.touched) {
@@ -87,8 +71,9 @@ const CATEGORIES = [
   `,
 })
 export class DepenseFormComponent {
-  depense = input<any>(null);
-  champs  = input<any[]>([]);
+  depense    = input<any>(null);
+  champs     = input<any[]>([]);
+  categories = input<any[]>([]);
 
   ferme      = output<void>();
   sauvegarde = output<void>();
@@ -97,7 +82,6 @@ export class DepenseFormComponent {
   private notif = inject(NotificationService);
   private fb    = inject(FormBuilder);
 
-  readonly categories = CATEGORIES;
   saving = signal(false);
 
   form = this.fb.group({
