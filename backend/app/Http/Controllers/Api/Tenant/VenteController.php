@@ -24,6 +24,7 @@ class VenteController extends Controller
         $orgId = $request->user()->organisation_id;
 
         $query = Vente::where('organisation_id', $orgId)
+            ->where(fn($q) => $q->where('est_auto_generee', false)->orWhereNull('est_auto_generee'))
             ->with(['champ:id,nom', 'culture:id,nom', 'campagne:id,nom']);
 
         if ($request->champ_id) $query->where('champ_id', $request->champ_id);

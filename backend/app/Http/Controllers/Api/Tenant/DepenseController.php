@@ -18,6 +18,7 @@ class DepenseController extends Controller
         $orgId = $request->user()->organisation_id;
 
         $query = Depense::where('organisation_id', $orgId)
+            ->where('categorie', '!=', 'financement_individuel')
             ->with(['champ:id,nom', 'user:id,nom', 'campagne:id,nom']);
 
         if ($request->champ_id === 'sans_exploitation') {
