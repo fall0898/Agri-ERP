@@ -84,7 +84,7 @@ class CultureController extends Controller
 
         $culture->update($validated);
 
-        return response()->json($culture->fresh()->load(['champ:id,nom', 'campagne:id,nom']));
+        return new CultureResource($culture->fresh()->load(['champ:id,nom', 'campagne:id,nom']));
     }
 
     public function destroy(Request $request, int $id): JsonResponse
