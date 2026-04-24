@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Tenant;
 
 use App\Events\IntrantUtilise;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CultureResource;
 use App\Models\Culture;
 use App\Models\Media;
 use App\Models\UtilisationIntrant;
@@ -25,7 +26,7 @@ class CultureController extends Controller
         if ($request->statut) $query->where('statut', $request->statut);
         if ($request->search) $query->where('nom', 'like', '%' . $request->search . '%');
 
-        return response()->json($query->orderByDesc('created_at')->get());
+        return CultureResource::collection($query->orderByDesc('created_at')->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -49,7 +50,7 @@ class CultureController extends Controller
             'organisation_id' => $request->user()->organisation_id,
         ]);
 
-        return response()->json($culture->load(['champ:id,nom', 'campagne:id,nom']), 201);
+        return (new CultureResource($culture->load(['champ:id,nom'])))->response()->setStatusCode(201);
     }
 
     public function show(Request $request, int $id): JsonResponse
@@ -58,7 +59,7 @@ class CultureController extends Controller
             ->with(['champ:id,nom', 'campagne:id,nom', 'medias', 'utilisationsIntrants.intrant'])
             ->findOrFail($id);
 
-        return response()->json($culture);
+        return new CultureResource($culture);
     }
 
     public function update(Request $request, int $id): JsonResponse

@@ -20,6 +20,10 @@ class CultureResource extends JsonResource
             'date_recolte_prevue'    => $this->date_recolte_prevue,
             'champ_id'               => $this->champ_id,
             'champ'                  => $this->whenLoaded('champ', fn() => ['id' => $this->champ->id, 'nom' => $this->champ->nom]),
+            'notes'                  => $this->notes,
+            'campagne'               => $this->whenLoaded('campagne', fn() => $this->campagne ? ['id' => $this->campagne->id, 'nom' => $this->campagne->nom] : null),
+            'utilisations_intrants'  => $this->whenLoaded('utilisationsIntrants'),
+            'medias'                 => $this->whenLoaded('medias'),
         ];
     }
 }
