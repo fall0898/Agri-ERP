@@ -897,7 +897,7 @@ export class AbonnementComponent implements OnInit, OnDestroy {
         this.paiementEnCours.set(false);
         return;
       }
-      this.api.get<{ statut: string }>(`/api/abonnement/paiement/verifier?reference_id=${referenceId}`).subscribe({
+      this.api.post<{ statut: string }>('/api/abonnement/paiement/verifier', { reference_id: referenceId }).subscribe({
         next: res => {
           if (['reussi','paye','confirme'].includes(res.statut)) {
             this.arreterPolling();
