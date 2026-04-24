@@ -75,7 +75,12 @@ class WhatsappAgentController extends Controller
             return $this->twiml("Envoyez un message texte ou un message vocal.");
         }
 
-        $agent = $this->agentService->process($body, $waUser->organisation);
+        try {
+            $agent = $this->agentService->process($body, $waUser->organisation);
+        } catch (\Exception $e) {
+            \Log::error('WhatsApp AgentService error: ' . $e->getMessage());
+            return $this->twiml("Désolé, une erreur s'est produite. Réessayez dans un instant.");
+        }
 
         if (in_array($agent['intent'], ['ADD_DEPENSE', 'ADD_VENTE', 'ADD_MOUVEMENT_STOCK'])) {
             $this->conversationState->set($phone, [
