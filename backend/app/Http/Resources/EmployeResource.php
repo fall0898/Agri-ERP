@@ -16,6 +16,8 @@ class EmployeResource extends JsonResource
             'salaire_mensuel_fcfa' => $this->salaire_mensuel_fcfa,
             'est_actif'            => $this->est_actif,
             'date_embauche'        => $this->date_embauche,
+            'notes'                => $this->notes,
+            'created_at'           => $this->created_at,
         ];
     }
 }

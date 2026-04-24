@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\EmployeResource;
 use App\Models\Employe;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class EmployeController extends Controller
             ->orderBy('nom')
             ->get();
 
-        return response()->json($employes);
+        return EmployeResource::collection($employes)->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -35,7 +36,7 @@ class EmployeController extends Controller
             'user_id' => $request->user()->id,
         ]);
 
-        return response()->json($employe, 201);
+        return (new EmployeResource($employe))->response()->setStatusCode(201);
     }
 
     public function show(Request $request, int $id): JsonResponse
@@ -44,7 +45,7 @@ class EmployeController extends Controller
             ->with(['taches' => fn($q) => $q->orderByDesc('date_debut')->limit(20)])
             ->findOrFail($id);
 
-        return response()->json($employe);
+        return new EmployeResource($employe);
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -63,7 +64,7 @@ class EmployeController extends Controller
 
         $employe->update($validated);
 
-        return response()->json($employe->fresh());
+        return new EmployeResource($employe->fresh());
     }
 
     public function destroy(Request $request, int $id): JsonResponse
