@@ -725,7 +725,7 @@ interface PlanData {
               </div>
               <div class="f-row" style="margin-top: 20px;">
                 <label class="f-label">Votre numéro WhatsApp</label>
-                <input type="tel" class="f-input" placeholder="+221 77 123 45 67"
+                <input type="tel" class="f-input" placeholder="+221771234567"
                        [value]="waInput()"
                        (input)="waInput.set($any($event.target).value)"
                        [class.f-input-error]="waError()"/>
@@ -927,6 +927,7 @@ export class ParametresComponent implements OnInit {
         this.waPhone.set(data.phone_number);
         this.waBotNum.set(data.bot_number);
       },
+      error: () => { /* non-critical, silently ignore */ },
     });
   }
 
@@ -964,6 +965,7 @@ export class ParametresComponent implements OnInit {
       },
       error: () => {
         this.waLoading.set(false);
+        this.notif.error('Erreur lors de la déliaison. Réessayez.');
       },
     });
   }
