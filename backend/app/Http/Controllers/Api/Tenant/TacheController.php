@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\TacheResource;
 use App\Models\Tache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,11 @@ class TacheController extends Controller
         if ($request->date_debut) $query->where('date_debut', '>=', $request->date_debut);
         if ($request->date_fin) $query->where('date_debut', '<=', $request->date_fin);
 
-        return response()->json($query->orderByRaw("CASE WHEN priorite = 'urgente' THEN 1 WHEN priorite = 'haute' THEN 2 WHEN priorite = 'normale' THEN 3 WHEN priorite = 'basse' THEN 4 ELSE 5 END")->orderBy('date_debut')->get());
+        return TacheResource::collection(
+            $query->orderByRaw("CASE WHEN priorite = 'urgente' THEN 1 WHEN priorite = 'haute' THEN 2 WHEN priorite = 'normale' THEN 3 WHEN priorite = 'basse' THEN 4 ELSE 5 END")
+                  ->orderBy('date_debut')
+                  ->get()
+        )->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -43,7 +48,7 @@ class TacheController extends Controller
             'organisation_id' => $request->user()->organisation_id,
         ]);
 
-        return response()->json($tache->load(['employe:id,nom', 'champ:id,nom']), 201);
+        return (new TacheResource($tache->load(['employe:id,nom', 'champ:id,nom'])))->response()->setStatusCode(201);
     }
 
     public function show(Request $request, int $id): JsonResponse
@@ -52,7 +57,7 @@ class TacheController extends Controller
             ->with(['employe:id,nom', 'champ:id,nom', 'culture:id,nom'])
             ->findOrFail($id);
 
-        return response()->json($tache);
+        return new TacheResource($tache);
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -73,7 +78,7 @@ class TacheController extends Controller
 
         $tache->update($validated);
 
-        return response()->json($tache->fresh()->load(['employe:id,nom', 'champ:id,nom']));
+        return new TacheResource($tache->fresh()->load(['employe:id,nom', 'champ:id,nom']));
     }
 
     public function updateStatut(Request $request, int $id): JsonResponse
@@ -84,7 +89,7 @@ class TacheController extends Controller
 
         $tache->update(['statut' => $request->statut]);
 
-        return response()->json($tache->fresh());
+        return new TacheResource($tache->fresh()->load(['employe:id,nom', 'champ:id,nom']));
     }
 
     public function destroy(Request $request, int $id): JsonResponse
