@@ -68,13 +68,30 @@ class WhatsappAgentTest extends TestCase
              ->assertJsonPath('phone_number', '+221777000001');
     }
 
-    // public function test_conversation_state_set_get_clear(): void
-    // {
-    //     $service = new \App\Services\Whatsapp\ConversationStateService();
-    //     $service->set('+221770809798', ['step' => 'awaiting_confirmation', 'intent' => 'ADD_DEPENSE']);
-    //     $state = $service->get('+221770809798');
-    //     $this->assertEquals('awaiting_confirmation', $state['step']);
-    //     $service->clear('+221770809798');
-    //     $this->assertNull($service->get('+221770809798'));
-    // }
+    public function test_conversation_state_set_get_clear(): void
+    {
+        $service = new \App\Services\Whatsapp\ConversationStateService();
+        $service->set('+221770809798', ['step' => 'awaiting_confirmation', 'intent' => 'ADD_DEPENSE']);
+        $state = $service->get('+221770809798');
+        $this->assertEquals('awaiting_confirmation', $state['step']);
+        $this->assertEquals('ADD_DEPENSE', $state['intent']);
+        $service->clear('+221770809798');
+        $this->assertNull($service->get('+221770809798'));
+    }
+
+    public function test_agent_service_parse_json_valide(): void
+    {
+        $mockResponse = json_encode([
+            'intent'   => 'ADD_DEPENSE',
+            'language' => 'fr',
+            'params'   => ['montant_fcfa' => 5000, 'categorie' => 'intrant', 'description' => 'semences', 'date_depense' => '2026-04-24', 'campagne_id' => null],
+            'response' => 'Vous voulez enregistrer 5 000 FCFA pour Intrant. Tapez OUI pour confirmer.',
+        ]);
+
+        $result = json_decode($mockResponse, true);
+        $this->assertEquals('ADD_DEPENSE', $result['intent']);
+        $this->assertEquals(5000, $result['params']['montant_fcfa']);
+        $this->assertEquals('fr', $result['language']);
+        $this->assertArrayHasKey('response', $result);
+    }
 }
