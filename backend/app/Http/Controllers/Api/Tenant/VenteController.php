@@ -35,10 +35,7 @@ class VenteController extends Controller
 
         $ventes = $query->orderByDesc('date_vente')->get();
 
-        return response()->json([
-            'data'  => $ventes->map(fn($v) => (new VenteResource($v))->toArray($request))->values(),
-            'total' => $ventes->sum('montant_total_fcfa'),
-        ]);
+        return (new VenteCollection($ventes))->response();
     }
 
     public function store(Request $request): JsonResponse

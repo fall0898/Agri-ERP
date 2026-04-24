@@ -34,10 +34,7 @@ class DepenseController extends Controller
 
         $depenses = $query->orderByDesc('date_depense')->get();
 
-        return response()->json([
-            'data'  => $depenses->map(fn($d) => (new DepenseResource($d))->toArray($request))->values(),
-            'total' => $depenses->sum('montant_fcfa'),
-        ]);
+        return (new DepenseCollection($depenses))->response();
     }
 
     public function store(Request $request): JsonResponse
