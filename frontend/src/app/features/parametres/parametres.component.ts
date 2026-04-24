@@ -368,6 +368,46 @@ interface PlanData {
       transition: transform .2s;
     }
     .toggle.on .toggle-thumb { transform: translateX(18px); }
+
+    /* ── whatsapp section ── */
+    .wa-linked-banner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--green-bg);
+      border: 1.5px solid var(--green-mid);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+    }
+    .wa-linked-icon { font-size: 24px; }
+    .wa-linked-title { font-size: 13px; font-weight: 600; color: var(--green); margin-bottom: 2px; }
+    .wa-linked-phone { font-size: 15px; font-weight: 700; color: var(--text); }
+    .wa-instructions {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+    }
+    .wa-step-title { font-size: 12px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: .3px; margin: 0 0 10px; }
+    .wa-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+    .wa-steps li { font-size: 13px; color: var(--text); }
+    .wa-steps em { color: var(--green); font-style: italic; }
+    .wa-intro {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: #f0f9ff;
+      border: 1.5px solid #bae6fd;
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .wa-intro-icon { font-size: 28px; }
+    .wa-intro-title { font-size: 14px; font-weight: 600; color: #0369a1; margin-bottom: 4px; }
+    .wa-intro-desc { font-size: 13px; color: #0284c7; }
+    .f-input-error { border-color: #ef4444 !important; }
+    .f-error { font-size: 11px; color: var(--red); margin-top: 4px; }
   `],
   template: `
 <div class="p-shell">
@@ -645,6 +685,66 @@ interface PlanData {
         </div>
       }
 
+      <!-- ── WhatsApp ── -->
+      @if (activeTab() === 'whatsapp') {
+        <div class="p-card">
+          <div class="p-card-header">
+            <div class="p-card-title">Assistant WhatsApp</div>
+            <div class="p-card-desc">Liez votre numéro WhatsApp pour gérer votre exploitation en Wolof ou en français</div>
+          </div>
+          <div class="p-card-body">
+            @if (waLinked()) {
+              <!-- Linked state -->
+              <div class="wa-linked-banner">
+                <div class="wa-linked-icon">✅</div>
+                <div>
+                  <div class="wa-linked-title">Numéro lié</div>
+                  <div class="wa-linked-phone">{{ waPhone() }}</div>
+                </div>
+              </div>
+              <div class="wa-instructions">
+                <p class="wa-step-title">Comment utiliser l'assistant :</p>
+                <ol class="wa-steps">
+                  <li>Enregistrez ce numéro dans vos contacts : <strong>{{ waBotNum() }}</strong></li>
+                  <li>Envoyez un message WhatsApp (texte ou vocal en Wolof/Français)</li>
+                  <li>Exemples : <em>"Maa ngi jënd 3 sac urée 15 000 FCFA"</em> ou <em>"J'ai vendu 100 kg de tomates à 400 FCFA"</em></li>
+                  <li>L'IA comprend et enregistre directement dans Agri-ERP après confirmation</li>
+                </ol>
+              </div>
+              <button class="btn-danger" (click)="unlinkWhatsapp()" [disabled]="waLoading()">
+                {{ waLoading() ? 'Déliaison…' : 'Délier ce numéro' }}
+              </button>
+            } @else {
+              <!-- Not linked state -->
+              <div class="wa-intro">
+                <div class="wa-intro-icon">📱</div>
+                <div>
+                  <div class="wa-intro-title">Gérez votre exploitation par WhatsApp</div>
+                  <div class="wa-intro-desc">Ajoutez des dépenses, ventes, consultez vos finances — par message vocal ou texte en Wolof ou Français.</div>
+                </div>
+              </div>
+              <div class="f-row" style="margin-top: 20px;">
+                <label class="f-label">Votre numéro WhatsApp</label>
+                <input type="tel" class="f-input" placeholder="+221 77 123 45 67"
+                       [value]="waInput()"
+                       (input)="waInput.set($any($event.target).value)"
+                       [class.f-input-error]="waError()"/>
+                @if (waError()) {
+                  <p class="f-error">{{ waError() }}</p>
+                }
+                <p class="f-hint">Format international requis : +221XXXXXXXXX</p>
+              </div>
+              <button class="btn-primary" (click)="linkWhatsapp()" [disabled]="waLoading() || !waInput()">
+                @if (waLoading()) {
+                  <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24" style="animation:spin .8s linear infinite"><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+                }
+                {{ waLoading() ? 'Liaison en cours…' : 'Lier mon numéro WhatsApp' }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
     </div>
   </div>
 </div>
@@ -665,11 +765,19 @@ export class ParametresComponent implements OnInit {
   prefs          = signal<Record<string, boolean>>({});
   planData       = signal<PlanData | null>(null);
 
+  waLinked  = signal(false);
+  waPhone   = signal<string | null>(null);
+  waBotNum  = signal('');
+  waLoading = signal(false);
+  waInput   = signal('');
+  waError   = signal('');
+
   tabs = [
     { id: 'profil',        label: 'Mon profil',    icon: this.svg('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z') },
     { id: 'motdepasse',    label: 'Mot de passe',  icon: this.svg('M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z') },
     { id: 'organisation',  label: 'Exploitation',  icon: this.svg('M2 20h20M5 20V8l7-5 7 5v12') },
     { id: 'notifications', label: 'Notifications', icon: this.svg('M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0') },
+    { id: 'whatsapp', label: 'WhatsApp', icon: this.svg('M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z') },
   ];
 
   notifPrefs = [
@@ -737,6 +845,8 @@ export class ParametresComponent implements OnInit {
         }
       },
     });
+
+    this.loadWhatsappStatus();
   }
 
   prefEnabled(key: string): boolean { return this.prefs()[key] !== false; }
@@ -806,6 +916,56 @@ export class ParametresComponent implements OnInit {
     if (pct >= 100) return 'full';
     if (pct >= 75)  return 'warn';
     return 'ok';
+  }
+
+  loadWhatsappStatus(): void {
+    this.api.get<{ linked: boolean; phone_number: string | null; bot_number: string }>(
+      '/api/parametres/whatsapp'
+    ).subscribe({
+      next: data => {
+        this.waLinked.set(data.linked);
+        this.waPhone.set(data.phone_number);
+        this.waBotNum.set(data.bot_number);
+      },
+    });
+  }
+
+  linkWhatsapp(): void {
+    this.waError.set('');
+    const phone = this.waInput().trim();
+    if (!/^\+\d{10,15}$/.test(phone)) {
+      this.waError.set('Format invalide. Exemple : +221771234567');
+      return;
+    }
+    this.waLoading.set(true);
+    this.api.post<{ phone_number: string }>('/api/parametres/whatsapp', { phone_number: phone }).subscribe({
+      next: res => {
+        this.waLinked.set(true);
+        this.waPhone.set(res.phone_number);
+        this.waLoading.set(false);
+        this.waInput.set('');
+        this.notif.success('Numéro WhatsApp lié avec succès !');
+      },
+      error: err => {
+        this.waLoading.set(false);
+        this.waError.set(err.error?.message || 'Erreur lors de la liaison.');
+      },
+    });
+  }
+
+  unlinkWhatsapp(): void {
+    this.waLoading.set(true);
+    this.api.delete('/api/parametres/whatsapp').subscribe({
+      next: () => {
+        this.waLinked.set(false);
+        this.waPhone.set(null);
+        this.waLoading.set(false);
+        this.notif.success('Numéro WhatsApp délié.');
+      },
+      error: () => {
+        this.waLoading.set(false);
+      },
+    });
   }
 
   private svg(path: string): string {
