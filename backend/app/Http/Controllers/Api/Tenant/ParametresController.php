@@ -80,20 +80,19 @@ class ParametresController extends Controller
 
         $user = $request->user();
 
-        // Supprimer l'ancien lien s'il existe pour cet utilisateur
-        WhatsappUser::where('user_id', $user->id)->delete();
+        try {
+            // Supprimer l'ancien lien s'il existe pour cet utilisateur
+            WhatsappUser::where('user_id', $user->id)->delete();
 
-        // Vérifier que ce numéro n'est pas déjà pris par un autre utilisateur
-        if (WhatsappUser::where('phone_number', $validated['phone_number'])->exists()) {
+            $waUser = WhatsappUser::create([
+                'user_id'         => $user->id,
+                'organisation_id' => $user->organisation_id,
+                'phone_number'    => $validated['phone_number'],
+                'est_actif'       => true,
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
             return response()->json(['message' => 'Ce numéro est déjà lié à un autre compte.'], 422);
         }
-
-        $waUser = WhatsappUser::create([
-            'user_id'         => $user->id,
-            'organisation_id' => $user->organisation_id,
-            'phone_number'    => $validated['phone_number'],
-            'est_actif'       => true,
-        ]);
 
         return response()->json([
             'message'      => 'Numéro WhatsApp lié avec succès.',
