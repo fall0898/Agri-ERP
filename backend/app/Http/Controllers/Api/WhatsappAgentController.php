@@ -7,6 +7,7 @@ use App\Models\WhatsappUser;
 use App\Services\Whatsapp\ActionExecutor;
 use App\Services\Whatsapp\AgentService;
 use App\Services\Whatsapp\ConversationStateService;
+use App\Services\Whatsapp\TranscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -16,6 +17,7 @@ class WhatsappAgentController extends Controller
         private AgentService             $agentService,
         private ActionExecutor           $actionExecutor,
         private ConversationStateService $conversationState,
+        private TranscriptionService     $transcription,
     ) {}
 
     public function handle(Request $request): Response
@@ -23,6 +25,18 @@ class WhatsappAgentController extends Controller
         $from  = $request->input('From', '');
         $phone = preg_replace('/^whatsapp:/i', '', $from);
         $body  = trim($request->input('Body', ''));
+
+        // If audio message, transcribe first
+        if ($request->has('MediaUrl0') && empty($body)) {
+            try {
+                $body = $this->transcription->transcribe(
+                    $request->input('MediaUrl0'),
+                    $request->input('MediaContentType0', 'audio/ogg')
+                );
+            } catch (\Exception $e) {
+                return $this->twiml('Désolé, je n\'ai pas pu comprendre votre message audio. Essayez par texte.');
+            }
+        }
 
         $waUser = WhatsappUser::where('phone_number', $phone)->where('est_actif', true)->first();
 
