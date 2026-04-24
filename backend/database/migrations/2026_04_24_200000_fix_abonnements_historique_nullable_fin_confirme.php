@@ -14,7 +14,9 @@ return new class extends Migration
             $table->date('date_debut')->nullable()->change();
         });
 
-        DB::statement("ALTER TABLE abonnements_historique MODIFY COLUMN statut ENUM('en_attente','paye','echoue','rembourse','confirme') NOT NULL DEFAULT 'en_attente'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE abonnements_historique MODIFY COLUMN statut ENUM('en_attente','paye','echoue','rembourse','confirme') NOT NULL DEFAULT 'en_attente'");
+        }
     }
 
     public function down(): void
@@ -23,6 +25,8 @@ return new class extends Migration
             $table->date('date_fin')->nullable(false)->change();
             $table->date('date_debut')->nullable(false)->change();
         });
-        DB::statement("ALTER TABLE abonnements_historique MODIFY COLUMN statut ENUM('en_attente','paye','echoue','rembourse') NOT NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE abonnements_historique MODIFY COLUMN statut ENUM('en_attente','paye','echoue','rembourse') NOT NULL");
+        }
     }
 };
