@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Models\WhatsappUser;
 use App\Services\Abonnement\PlanStrategies\PlanStrategyFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -68,6 +69,51 @@ class ParametresController extends Controller
         return response()->json([
             'message' => 'Préférences de notification mises à jour.',
             'preferences_notification' => $request->preferences_notification,
+        ]);
+    }
+
+    public function linkWhatsapp(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'phone_number' => ['required', 'string', 'regex:/^\+\d{10,15}$/'],
+        ]);
+
+        $user = $request->user();
+
+        // Supprimer l'ancien lien s'il existe pour cet utilisateur
+        WhatsappUser::where('user_id', $user->id)->delete();
+
+        // Vérifier que ce numéro n'est pas déjà pris par un autre utilisateur
+        if (WhatsappUser::where('phone_number', $validated['phone_number'])->exists()) {
+            return response()->json(['message' => 'Ce numéro est déjà lié à un autre compte.'], 422);
+        }
+
+        $waUser = WhatsappUser::create([
+            'user_id'         => $user->id,
+            'organisation_id' => $user->organisation_id,
+            'phone_number'    => $validated['phone_number'],
+            'est_actif'       => true,
+        ]);
+
+        return response()->json([
+            'message'      => 'Numéro WhatsApp lié avec succès.',
+            'phone_number' => $waUser->phone_number,
+        ]);
+    }
+
+    public function unlinkWhatsapp(Request $request): JsonResponse
+    {
+        WhatsappUser::where('user_id', $request->user()->id)->delete();
+        return response()->json(['message' => 'Numéro WhatsApp délié.']);
+    }
+
+    public function whatsappStatus(Request $request): JsonResponse
+    {
+        $waUser = WhatsappUser::where('user_id', $request->user()->id)->first();
+        return response()->json([
+            'linked'       => $waUser !== null,
+            'phone_number' => $waUser?->phone_number,
+            'bot_number'   => config('whatsapp.twilio_from'),
         ]);
     }
 }

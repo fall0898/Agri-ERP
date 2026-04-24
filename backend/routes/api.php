@@ -240,6 +240,11 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
         Route::put('/parametres', [Tenant\ParametresController::class, 'update']);
     });
     Route::put('/parametres/preferences-notification', [Tenant\ParametresController::class, 'updatePreferencesNotification']);
+    Route::prefix('parametres/whatsapp')->group(function () {
+        Route::get('/',    [Tenant\ParametresController::class, 'whatsappStatus']);
+        Route::post('/',   [Tenant\ParametresController::class, 'linkWhatsapp']);
+        Route::delete('/', [Tenant\ParametresController::class, 'unlinkWhatsapp']);
+    });
 
     /*
     |--------------------------------------------------------------------------
