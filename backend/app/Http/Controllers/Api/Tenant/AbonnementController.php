@@ -115,9 +115,9 @@ class AbonnementController extends Controller
                 'organisation_id' => $organisation->id,
                 'user_id'         => $request->user()->id,
                 'action'          => 'paiement_confirme',
-                'modele'          => 'AbonnementHistorique',
-                'modele_id'       => $historique->id,
-                'details'         => json_encode(['plan' => $historique->plan_nouveau, 'montant' => $historique->montant_fcfa]),
+                'model_type'      => 'AbonnementHistorique',
+                'model_id'        => $historique->id,
+                'nouvelles_valeurs' => ['plan' => $historique->plan_nouveau, 'montant' => $historique->montant_fcfa],
             ]);
         }
 

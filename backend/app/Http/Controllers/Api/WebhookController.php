@@ -70,12 +70,12 @@ class WebhookController extends Controller
             ]);
 
             AuditLog::create([
-                'organisation_id' => $organisation->id,
-                'user_id'         => null,
-                'action'          => 'webhook_paiement_confirme',
-                'modele'          => 'AbonnementHistorique',
-                'modele_id'       => $historique->id,
-                'details'         => json_encode(['processeur' => $processeur, 'plan' => $historique->plan_nouveau]),
+                'organisation_id'  => $organisation->id,
+                'user_id'          => null,
+                'action'           => 'webhook_paiement_confirme',
+                'model_type'       => 'AbonnementHistorique',
+                'model_id'         => $historique->id,
+                'nouvelles_valeurs' => ['processeur' => $processeur, 'plan' => $historique->plan_nouveau],
             ]);
 
             Log::info("Webhook {$processeur} : paiement confirmé pour org {$organisation->id}");
