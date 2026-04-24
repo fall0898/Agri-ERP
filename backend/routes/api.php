@@ -34,6 +34,9 @@ Route::post('/webhooks/wave', [\App\Http\Controllers\Api\WebhookController::clas
 Route::post('/webhooks/orange-money', [\App\Http\Controllers\Api\WebhookController::class, 'orangeMoney']);
 Route::post('/webhooks/stripe', fn() => response()->json(['status' => 'ok']));
 
+// WhatsApp webhook (public — sécurisé par signature Twilio en production)
+Route::post('/whatsapp/webhook', [\App\Http\Controllers\Api\WhatsappAgentController::class, 'handle']);
+
 /*
 |--------------------------------------------------------------------------
 | Routes Authentifiées

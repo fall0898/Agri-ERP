@@ -48,8 +48,10 @@ class AgentService
 
     private function buildSystemPrompt(Organisation $organisation, mixed $campagne): string
     {
-        $today      = now()->format('Y-m-d');
-        $categories = 'intrant, salaire, materiel, carburant, main_oeuvre, traitement_phytosanitaire, transport, irrigation, entretien_materiel, alimentation_betail, frais_recolte, autre';
+        $today          = now()->format('Y-m-d');
+        $categories     = 'intrant, salaire, materiel, carburant, main_oeuvre, traitement_phytosanitaire, transport, irrigation, entretien_materiel, alimentation_betail, frais_recolte, autre';
+        $campagneNom    = $campagne?->nom ?? 'Aucune';
+        $campagneId     = $campagne?->id ?? 'null';
 
         return <<<PROMPT
 Tu es l'assistant IA de l'application Agri-ERP pour les agriculteurs sénégalais.
@@ -57,8 +59,8 @@ Tu dois analyser le message de l'agriculteur et retourner UNIQUEMENT un objet JS
 
 Organisation: {$organisation->nom}
 Date aujourd'hui: {$today}
-Campagne active: {$campagne?->nom ?? 'Aucune'}
-Campagne ID: {$campagne?->id ?? 'null'}
+Campagne active: {$campagneNom}
+Campagne ID: {$campagneId}
 
 Tu comprends le Wolof, le français et les mélanges (Wolof-français).
 Détecte la langue du message et réponds dans la même langue.
