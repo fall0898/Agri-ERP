@@ -2,6 +2,7 @@
 namespace Tests\Feature;
 
 use App\Models\WhatsappUser;
+use App\Services\Whatsapp\AgentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\CreatesAuthenticatedTenant;
 use Tests\TestCase;
@@ -93,5 +94,88 @@ class WhatsappAgentTest extends TestCase
         $this->assertEquals(5000, $result['params']['montant_fcfa']);
         $this->assertEquals('fr', $result['language']);
         $this->assertArrayHasKey('response', $result);
+    }
+
+    public function test_action_executor_cree_depense(): void
+    {
+        ['org' => $org, 'user' => $user] = $this->creerTenantAdmin();
+        app()->instance('tenant', $org);
+
+        $waUser = WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true]);
+
+        $executor = app(\App\Services\Whatsapp\ActionExecutor::class);
+        $result   = $executor->execute('ADD_DEPENSE', [
+            'montant_fcfa'  => 15000,
+            'categorie'     => 'intrant',
+            'description'   => '3 sacs urée',
+            'date_depense'  => '2026-04-24',
+            'campagne_id'   => null,
+        ], $waUser, 'fr');
+
+        $this->assertStringContainsString('✅', $result['response']);
+        $this->assertDatabaseHas('depenses', ['montant_fcfa' => 15000, 'categorie' => 'intrant']);
+    }
+
+    public function test_webhook_numero_inconnu_retourne_message_aide(): void
+    {
+        $response = $this->call('POST', '/api/whatsapp/webhook', [
+            'From' => 'whatsapp:+221000000000',
+            'Body' => 'Bonjour',
+        ]);
+
+        $response->assertOk();
+        $this->assertStringContainsString('lié', $response->getContent());
+    }
+
+    public function test_webhook_flux_complet_ajout_depense(): void
+    {
+        ['org' => $org, 'user' => $user] = $this->creerTenantAdmin();
+        WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true]);
+
+        $this->mock(AgentService::class, function ($mock) {
+            $mock->shouldReceive('process')->once()->andReturn([
+                'intent'   => 'ADD_DEPENSE',
+                'language' => 'fr',
+                'params'   => ['montant_fcfa' => 8000, 'categorie' => 'carburant', 'description' => 'gasoil', 'date_depense' => '2026-04-24', 'campagne_id' => null],
+                'response' => 'Vous voulez enregistrer 8 000 FCFA pour Carburant. Tapez OUI pour confirmer.',
+            ]);
+        });
+
+        $response1 = $this->call('POST', '/api/whatsapp/webhook', [
+            'From' => 'whatsapp:+221770809798',
+            'Body' => "J'ai acheté du gasoil pour 8000 FCFA",
+        ]);
+        $response1->assertOk();
+        $this->assertStringContainsString('confirmer', $response1->getContent());
+
+        $response2 = $this->call('POST', '/api/whatsapp/webhook', [
+            'From' => 'whatsapp:+221770809798',
+            'Body' => 'OUI',
+        ]);
+        $response2->assertOk();
+        $this->assertStringContainsString('✅', $response2->getContent());
+
+        $this->assertDatabaseHas('depenses', ['montant_fcfa' => 8000, 'categorie' => 'carburant']);
+    }
+
+    public function test_webhook_annulation_supprime_etat(): void
+    {
+        ['org' => $org, 'user' => $user] = $this->creerTenantAdmin();
+        WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true]);
+
+        $this->mock(AgentService::class, function ($mock) {
+            $mock->shouldReceive('process')->once()->andReturn([
+                'intent' => 'ADD_DEPENSE', 'language' => 'fr',
+                'params' => ['montant_fcfa' => 5000, 'categorie' => 'intrant', 'description' => 'test', 'date_depense' => '2026-04-24', 'campagne_id' => null],
+                'response' => 'Confirmer ?',
+            ]);
+        });
+
+        $this->call('POST', '/api/whatsapp/webhook', ['From' => 'whatsapp:+221770809798', 'Body' => 'test']);
+        $response = $this->call('POST', '/api/whatsapp/webhook', ['From' => 'whatsapp:+221770809798', 'Body' => 'NON']);
+
+        $response->assertOk();
+        $this->assertStringContainsString('Annulé', $response->getContent());
+        $this->assertDatabaseMissing('depenses', ['montant_fcfa' => 5000]);
     }
 }
