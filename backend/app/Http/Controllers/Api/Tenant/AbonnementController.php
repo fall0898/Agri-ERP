@@ -63,11 +63,14 @@ class AbonnementController extends Controller
 
         \App\Models\AbonnementHistorique::create([
             'organisation_id'     => $organisation->id,
-            'plan'                => $validated['plan'],
+            'plan_precedent'      => $organisation->plan ?? 'gratuit',
+            'plan_nouveau'        => $validated['plan'],
             'montant_fcfa'        => $montant,
             'processeur_paiement' => $validated['processeur'],
             'reference_paiement'  => $result['reference_id'],
             'statut'              => 'en_attente',
+            'date_debut'          => now()->toDateString(),
+            'date_fin'            => null,
         ]);
 
         return response()->json([
@@ -84,8 +87,8 @@ class AbonnementController extends Controller
             ->where('organisation_id', app('tenant')->id)
             ->firstOrFail();
 
-        if ($historique->statut === 'paye') {
-            return response()->json(['statut' => 'paye']);
+        if (in_array($historique->statut, ['paye', 'confirme'])) {
+            return response()->json(['statut' => $historique->statut]);
         }
 
         try {
@@ -97,10 +100,14 @@ class AbonnementController extends Controller
         }
 
         if ($result['statut'] === 'reussi') {
-            $historique->update(['statut' => 'paye']);
+            $historique->update([
+                'statut'   => 'paye',
+                'date_fin' => now()->addDays(30)->toDateString(),
+            ]);
+
             $organisation = app('tenant');
             $organisation->update([
-                'plan'           => $historique->plan,
+                'plan'           => $historique->plan_nouveau,
                 'plan_expire_at' => now()->addDays(30),
             ]);
 
@@ -110,7 +117,7 @@ class AbonnementController extends Controller
                 'action'          => 'paiement_confirme',
                 'modele'          => 'AbonnementHistorique',
                 'modele_id'       => $historique->id,
-                'details'         => json_encode(['plan' => $historique->plan, 'montant' => $historique->montant_fcfa]),
+                'details'         => json_encode(['plan' => $historique->plan_nouveau, 'montant' => $historique->montant_fcfa]),
             ]);
         }
 
@@ -140,7 +147,7 @@ class AbonnementController extends Controller
             'montant_fcfa'       => 0,
             'processeur_paiement' => null,
             'reference_paiement' => null,
-            'statut'             => 'confirme',
+            'statut'             => 'paye',
             'date_debut'         => now()->toDateString(),
             'date_fin'           => null,
         ]);

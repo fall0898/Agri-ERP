@@ -58,11 +58,14 @@ class WebhookController extends Controller
         $estReussi = $this->detecterSucces($processeur, $data);
 
         if ($estReussi) {
-            $historique->update(['statut' => 'paye']);
+            $historique->update([
+                'statut'   => 'paye',
+                'date_fin' => now()->addYear()->toDateString(),
+            ]);
 
             $organisation = Organisation::find($historique->organisation_id);
             $organisation->update([
-                'plan'           => $historique->plan,
+                'plan'           => $historique->plan_nouveau,
                 'plan_expire_at' => now()->addYear(),
             ]);
 
@@ -72,7 +75,7 @@ class WebhookController extends Controller
                 'action'          => 'webhook_paiement_confirme',
                 'modele'          => 'AbonnementHistorique',
                 'modele_id'       => $historique->id,
-                'details'         => json_encode(['processeur' => $processeur, 'plan' => $historique->plan]),
+                'details'         => json_encode(['processeur' => $processeur, 'plan' => $historique->plan_nouveau]),
             ]);
 
             Log::info("Webhook {$processeur} : paiement confirmé pour org {$organisation->id}");
