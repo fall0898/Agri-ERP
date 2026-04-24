@@ -54,7 +54,7 @@ class StockController extends Controller
             ->findOrFail($id);
 
         $stock->niveau_alerte = $stock->getNiveauAlerte();
-        return new StockResource($stock);
+        return (new StockResource($stock))->response();
     }
 
     public function update(Request $request, int $id): JsonResponse
