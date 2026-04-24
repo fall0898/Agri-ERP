@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\StockResource;
 use App\Models\Stock;
 use App\Services\Stock\StockService;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +24,7 @@ class StockController extends Controller
             $query->whereNotNull('seuil_alerte')->whereRaw('quantite_actuelle <= seuil_alerte');
         }
 
-        return response()->json($query->where('est_actif', true)->orderBy('nom')->get());
+        return StockResource::collection($query->where('est_actif', true)->orderBy('nom')->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -43,7 +44,7 @@ class StockController extends Controller
             'user_id' => $request->user()->id,
         ]);
 
-        return response()->json($stock, 201);
+        return (new StockResource($stock))->response()->setStatusCode(201);
     }
 
     public function show(Request $request, int $id): JsonResponse
@@ -52,9 +53,8 @@ class StockController extends Controller
             ->with(['intrant:id,nom', 'mouvements' => fn($q) => $q->orderByDesc('date_mouvement')->limit(50)])
             ->findOrFail($id);
 
-        return response()->json(array_merge($stock->toArray(), [
-            'niveau_alerte' => $stock->getNiveauAlerte(),
-        ]));
+        $stock->niveau_alerte = $stock->getNiveauAlerte();
+        return new StockResource($stock);
     }
 
     public function update(Request $request, int $id): JsonResponse

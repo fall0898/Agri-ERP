@@ -16,6 +16,8 @@ class StockResource extends JsonResource
             'unite'             => $this->unite,
             'seuil_alerte'      => $this->seuil_alerte,
             'est_actif'         => $this->est_actif,
+            'intrant'           => $this->whenLoaded('intrant', fn() => $this->intrant ? ['id' => $this->intrant->id, 'nom' => $this->intrant->nom] : null),
+            'niveau_alerte'     => $this->when(property_exists($this->resource, 'niveau_alerte'), fn() => $this->resource->niveau_alerte),
         ];
     }
 }
