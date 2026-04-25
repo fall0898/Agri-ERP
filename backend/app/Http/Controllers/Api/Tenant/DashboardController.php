@@ -163,11 +163,12 @@ class DashboardController extends Controller
 
             $graphiqueFinance  = $this->financeService->getGraphiqueFinance($orgId, null);
             $graphiqueDepenses = $this->financeService->getDepensesParCategorie($orgId, null);
+            $parChamp = $this->financeService->getParChamp($orgId, []);
 
             return compact(
                 'kpis', 'ventesRecentes', 'depensesRecentes',
                 'stocksAlertes', 'tachesEnCours',
-                'graphiqueFinance', 'graphiqueDepenses'
+                'graphiqueFinance', 'graphiqueDepenses', 'parChamp'
             );
         });
 
