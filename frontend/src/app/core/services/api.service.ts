@@ -1,11 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { OfflineService } from './offline.service';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly baseUrl = environment.apiBaseUrl;
+  private offlineService = inject(OfflineService);
+  private readonly OFFLINE_INTERCEPTED = ['/api/ventes', '/api/depenses'];
 
   constructor(private http: HttpClient) {}
 
@@ -21,7 +24,11 @@ export class ApiService {
     return this.http.get<T>(`${this.baseUrl}${path}`, { params: httpParams });
   }
 
-  post<T>(path: string, body?: any): Observable<T> {
+  post<T>(path: string, body: any = {}): Observable<T> {
+    if (!this.offlineService.isOnline() && this.OFFLINE_INTERCEPTED.some(u => path.startsWith(u))) {
+      this.offlineService.queueRequest(path, body);
+      return of({ _offline: true, message: 'Enregistré hors ligne' } as any);
+    }
     return this.http.post<T>(`${this.baseUrl}${path}`, body);
   }
 
