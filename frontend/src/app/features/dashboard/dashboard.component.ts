@@ -761,14 +761,10 @@ export class DashboardComponent implements OnInit {
         this.ventesRecentes.set(
           (Array.isArray(res.ventesRecentes) ? res.ventesRecentes : []).slice(0, 5)
         );
+        this.parChamp.set(Array.isArray(res.parChamp) ? res.parChamp : []);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
-    });
-
-    this.api.get<any>('/api/finance/par-champ').subscribe({
-      next: res => this.parChamp.set(Array.isArray(res) ? res : (res.data ?? [])),
-      error: () => {},
     });
   }
 }
