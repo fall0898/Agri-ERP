@@ -11,6 +11,7 @@ use App\Services\Vente\VenteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 
 class VenteController extends Controller
 {
@@ -64,6 +65,8 @@ class VenteController extends Controller
             'organisation_id' => $request->user()->organisation_id,
             'user_id' => $request->user()->id,
         ]);
+
+        Cache::forget("dashboard_tout_{$request->user()->organisation_id}");
 
         return (new VenteResource($vente))->response()->setStatusCode(201);
     }
