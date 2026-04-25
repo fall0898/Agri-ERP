@@ -9,6 +9,7 @@ use App\Models\CategorieDepense;
 use App\Models\Depense;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class DepenseController extends Controller
@@ -53,6 +54,8 @@ class DepenseController extends Controller
             'organisation_id' => $request->user()->organisation_id,
             'user_id' => $request->user()->id,
         ]);
+
+        Cache::forget("dashboard_tout_{$request->user()->organisation_id}");
 
         return (new DepenseResource($depense->load(['champ:id,nom', 'campagne:id,nom'])))->response()->setStatusCode(201);
     }
