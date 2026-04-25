@@ -246,7 +246,7 @@ export class CulturesComponent implements OnInit {
   ngOnInit(): void {
     this.load();
     this.api.get<any>('/api/champs').subscribe({
-      next: res => this.champs.set(Array.isArray(res) ? res : res.data?.data ?? res.data ?? []),
+      next: res => this.champs.set(res.data ?? []),
     });
   }
 
@@ -254,7 +254,7 @@ export class CulturesComponent implements OnInit {
     this.loading.set(true);
     this.api.get<any>('/api/cultures').subscribe({
       next: res => {
-        this.cultures.set(Array.isArray(res) ? res : res.data?.data ?? res.data ?? []);
+        this.cultures.set(res.data ?? []);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

@@ -174,8 +174,7 @@ export class ChampsComponent implements OnInit {
     this.loading.set(true);
     this.api.get<any>('/api/champs').subscribe({
       next: res => {
-        const data = Array.isArray(res) ? res : res.data?.data ?? res.data ?? [];
-        this.champs.set(data);
+        this.champs.set(res.data ?? []);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

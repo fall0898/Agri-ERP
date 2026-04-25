@@ -318,7 +318,7 @@ export class StocksComponent implements OnInit {
     this.loading.set(true);
     this.api.get<any>('/api/stocks').subscribe({
       next: res => {
-        this.stocks.set(Array.isArray(res) ? res : res.data ?? []);
+        this.stocks.set(res.data ?? []);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

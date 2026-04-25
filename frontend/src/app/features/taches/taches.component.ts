@@ -234,10 +234,10 @@ export class TachesComponent implements OnInit {
   ngOnInit(): void {
     this.load();
     this.api.get<any>('/api/champs').subscribe({
-      next: res => this.champs.set(Array.isArray(res) ? res : res.data?.data ?? res.data ?? []),
+      next: res => this.champs.set(res.data ?? []),
     });
     this.api.get<any>('/api/employes').subscribe({
-      next: res => this.employes.set(Array.isArray(res) ? res : res.data?.data ?? res.data ?? []),
+      next: res => this.employes.set(res.data ?? []),
     });
   }
 
@@ -245,7 +245,7 @@ export class TachesComponent implements OnInit {
     this.loading.set(true);
     this.api.get<any>('/api/taches').subscribe({
       next: res => {
-        this.taches.set(Array.isArray(res) ? res : res.data?.data ?? res.data ?? []);
+        this.taches.set(res.data ?? []);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

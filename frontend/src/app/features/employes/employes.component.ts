@@ -656,7 +656,7 @@ export class EmployesComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.api.get<any>('/api/employes').subscribe({
-      next: res => { this.employes.set(Array.isArray(res) ? res : res.data ?? []); this.loading.set(false); },
+      next: res => { this.employes.set(res.data ?? []); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
   }

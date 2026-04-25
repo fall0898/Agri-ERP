@@ -298,7 +298,7 @@ export class DepensesComponent implements OnInit {
     this.load();
     this.loadCategories();
     this.api.get<any>('/api/champs').subscribe({
-      next: res => this.champs.set(Array.isArray(res) ? res : res.data?.data ?? res.data ?? []),
+      next: res => this.champs.set(res.data ?? []),
     });
   }
 
