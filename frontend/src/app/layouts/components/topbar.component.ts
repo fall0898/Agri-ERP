@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { OfflineService } from '../../core/services/offline.service';
 
 @Component({
   selector: 'app-topbar',
@@ -35,6 +36,23 @@ import { NotificationService } from '../../core/services/notification.service';
 
       <!-- Right: actions -->
       <div class="flex items-center gap-1">
+
+        <!-- Offline badge -->
+        @if (!offline.isOnline() || offline.pendingCount() > 0) {
+          <div class="lg:hidden flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium"
+               [class]="offline.isOnline() ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M12 12h.01"/>
+            </svg>
+            @if (!offline.isOnline()) {
+              <span>Hors ligne</span>
+            }
+            @if (offline.pendingCount() > 0) {
+              <span>{{ offline.pendingCount() }} en attente</span>
+            }
+          </div>
+        }
 
         <!-- Notifications -->
         <a routerLink="/notifications"
@@ -119,6 +137,7 @@ export class TopbarComponent {
   menuToggle = output<void>();
   auth = inject(AuthService);
   notifService = inject(NotificationService);
+  offline = inject(OfflineService);
   showAvatar = signal(false);
 
   toggleAvatar(): void { this.showAvatar.update(v => !v); }
