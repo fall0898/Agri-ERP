@@ -57,7 +57,7 @@ class TacheController extends Controller
             ->with(['employe:id,nom', 'champ:id,nom', 'culture:id,nom'])
             ->findOrFail($id);
 
-        return new TacheResource($tache);
+        return (new TacheResource($tache))->response();
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -78,7 +78,7 @@ class TacheController extends Controller
 
         $tache->update($validated);
 
-        return new TacheResource($tache->fresh()->load(['employe:id,nom', 'champ:id,nom']));
+        return (new TacheResource($tache->fresh()->load(['employe:id,nom', 'champ:id,nom'])))->response();
     }
 
     public function updateStatut(Request $request, int $id): JsonResponse
@@ -89,7 +89,7 @@ class TacheController extends Controller
 
         $tache->update(['statut' => $request->statut]);
 
-        return new TacheResource($tache->fresh()->load(['employe:id,nom', 'champ:id,nom']));
+        return (new TacheResource($tache->fresh()->load(['employe:id,nom', 'champ:id,nom'])))->response();
     }
 
     public function destroy(Request $request, int $id): JsonResponse

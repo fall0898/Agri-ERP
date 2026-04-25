@@ -59,7 +59,7 @@ class CultureController extends Controller
             ->with(['champ:id,nom', 'campagne:id,nom', 'medias', 'utilisationsIntrants.intrant'])
             ->findOrFail($id);
 
-        return new CultureResource($culture);
+        return (new CultureResource($culture))->response();
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -84,7 +84,7 @@ class CultureController extends Controller
 
         $culture->update($validated);
 
-        return new CultureResource($culture->fresh()->load(['champ:id,nom', 'campagne:id,nom']));
+        return (new CultureResource($culture->fresh()->load(['champ:id,nom', 'campagne:id,nom'])))->response();
     }
 
     public function destroy(Request $request, int $id): JsonResponse

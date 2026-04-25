@@ -45,7 +45,7 @@ class EmployeController extends Controller
             ->with(['taches' => fn($q) => $q->orderByDesc('date_debut')->limit(20)])
             ->findOrFail($id);
 
-        return new EmployeResource($employe);
+        return (new EmployeResource($employe))->response();
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -64,7 +64,7 @@ class EmployeController extends Controller
 
         $employe->update($validated);
 
-        return new EmployeResource($employe->fresh());
+        return (new EmployeResource($employe->fresh()))->response();
     }
 
     public function destroy(Request $request, int $id): JsonResponse
