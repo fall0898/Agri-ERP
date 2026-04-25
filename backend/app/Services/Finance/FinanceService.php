@@ -112,9 +112,17 @@ class FinanceService
 
     public function getGraphiqueFinance(int $organisationId, ?int $campagneId = null): array
     {
-        $isPgsql = DB::connection()->getDriverName() === 'pgsql';
-        $moisVente   = $isPgsql ? "TO_CHAR(date_vente, 'YYYY-MM')"   : 'DATE_FORMAT(date_vente, "%Y-%m")';
-        $moisDepense = $isPgsql ? "TO_CHAR(date_depense, 'YYYY-MM')" : 'DATE_FORMAT(date_depense, "%Y-%m")';
+        $driver = DB::connection()->getDriverName();
+        $moisVente   = match($driver) {
+            'pgsql'  => "TO_CHAR(date_vente, 'YYYY-MM')",
+            'sqlite' => "strftime('%Y-%m', date_vente)",
+            default  => 'DATE_FORMAT(date_vente, "%Y-%m")',
+        };
+        $moisDepense = match($driver) {
+            'pgsql'  => "TO_CHAR(date_depense, 'YYYY-MM')",
+            'sqlite' => "strftime('%Y-%m', date_depense)",
+            default  => 'DATE_FORMAT(date_depense, "%Y-%m")',
+        };
 
         $ventesParMois = Vente::where('organisation_id', $organisationId)
             ->where(fn($q) => $q->where('est_auto_generee', false)->orWhereNull('est_auto_generee'))
