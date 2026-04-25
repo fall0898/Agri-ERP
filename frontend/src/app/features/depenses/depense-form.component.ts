@@ -119,7 +119,13 @@ export class DepenseFormComponent {
       : this.api.post('/api/depenses', payload);
 
     req.subscribe({
-      next: () => {
+      next: res => {
+        if ((res as any)?._offline) {
+          this.notif.success('Dépense enregistrée hors ligne — sera envoyée automatiquement à la reconnexion.');
+          this.saving.set(false);
+          this.sauvegarde.emit();
+          return;
+        }
         this.notif.success(d ? 'Dépense modifiée.' : 'Dépense ajoutée.');
         this.saving.set(false);
         this.sauvegarde.emit();

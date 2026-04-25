@@ -184,7 +184,13 @@ export class VenteFormComponent implements OnInit {
       : this.api.post('/api/ventes', payload);
 
     req.subscribe({
-      next: () => {
+      next: res => {
+        if ((res as any)?._offline) {
+          this.notif.success('Vente enregistrée hors ligne — sera envoyée automatiquement à la reconnexion.');
+          this.saving.set(false);
+          this.sauvegarde.emit();
+          return;
+        }
         this.notif.success(v ? 'Vente modifiée.' : 'Vente enregistrée.');
         this.saving.set(false);
         this.sauvegarde.emit();
