@@ -19,6 +19,7 @@ class WhatsappAgentTest extends TestCase
             'organisation_id' => $org->id,
             'phone_number'    => $phone,
             'est_actif'       => true,
+            'onboarded_at'    => now(),
         ]);
         return compact('org', 'user');
     }
@@ -31,6 +32,7 @@ class WhatsappAgentTest extends TestCase
             'organisation_id' => $org->id,
             'phone_number'    => '+221770809798',
             'est_actif'       => true,
+            'onboarded_at'    => now(),
         ]);
         $this->assertDatabaseHas('whatsapp_users', [
             'phone_number' => '+221770809798',
@@ -52,7 +54,7 @@ class WhatsappAgentTest extends TestCase
     public function test_numero_deja_pris_retourne_422(): void
     {
         ['org' => $org, 'user' => $user] = $this->creerTenantAdmin();
-        WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true]);
+        WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true, 'onboarded_at' => now()]);
 
         $this->creerTenantAdmin();
         $this->postJson('/api/parametres/whatsapp', ['phone_number' => '+221770809798'])
@@ -101,7 +103,7 @@ class WhatsappAgentTest extends TestCase
         ['org' => $org, 'user' => $user] = $this->creerTenantAdmin();
         app()->instance('tenant', $org);
 
-        $waUser = WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true]);
+        $waUser = WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true, 'onboarded_at' => now()]);
 
         $executor = app(\App\Services\Whatsapp\ActionExecutor::class);
         $result   = $executor->execute('ADD_DEPENSE', [
@@ -130,7 +132,7 @@ class WhatsappAgentTest extends TestCase
     public function test_webhook_flux_complet_ajout_depense(): void
     {
         ['org' => $org, 'user' => $user] = $this->creerTenantAdmin();
-        WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true]);
+        WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true, 'onboarded_at' => now()]);
 
         $this->mock(AgentService::class, function ($mock) {
             $mock->shouldReceive('process')->once()->andReturn([
@@ -161,7 +163,7 @@ class WhatsappAgentTest extends TestCase
     public function test_webhook_annulation_supprime_etat(): void
     {
         ['org' => $org, 'user' => $user] = $this->creerTenantAdmin();
-        WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true]);
+        WhatsappUser::create(['user_id' => $user->id, 'organisation_id' => $org->id, 'phone_number' => '+221770809798', 'est_actif' => true, 'onboarded_at' => now()]);
 
         $this->mock(AgentService::class, function ($mock) {
             $mock->shouldReceive('process')->once()->andReturn([
