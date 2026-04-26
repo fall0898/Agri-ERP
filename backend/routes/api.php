@@ -249,6 +249,12 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
         Route::delete('/', [Tenant\ParametresController::class, 'unlinkWhatsapp']);
     });
 
+    // --- WhatsApp Admin ---
+    Route::prefix('whatsapp/admin')->middleware('App\Http\Middleware\CheckRole:admin,super_admin')->group(function () {
+        Route::get('/', [Tenant\WhatsappAdminController::class, 'dashboard']);
+        Route::patch('/users/{userId}/alertes', [Tenant\WhatsappAdminController::class, 'toggleAlertes']);
+    });
+
     /*
     |--------------------------------------------------------------------------
     | Routes Super-Admin Plateforme
