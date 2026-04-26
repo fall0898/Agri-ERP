@@ -82,7 +82,7 @@ class WhatsappAgentController extends Controller
             return $this->twiml("Désolé, une erreur s'est produite. Réessayez dans un instant.");
         }
 
-        if (in_array($agent['intent'], ['ADD_DEPENSE', 'ADD_VENTE', 'ADD_MOUVEMENT_STOCK'])) {
+        if (in_array($agent['intent'], ['ADD_DEPENSE', 'ADD_VENTE', 'ADD_MOUVEMENT_STOCK', 'SIGNALER_TRAITEMENT'])) {
             $this->conversationState->set($phone, [
                 'step'     => 'awaiting_confirmation',
                 'intent'   => $agent['intent'],
@@ -92,7 +92,7 @@ class WhatsappAgentController extends Controller
             return $this->twiml($agent['response']);
         }
 
-        if (in_array($agent['intent'], ['QUERY_FINANCES', 'QUERY_STOCK', 'QUERY_DEPENSES', 'QUERY_VENTES'])) {
+        if (in_array($agent['intent'], ['QUERY_FINANCES', 'QUERY_STOCK', 'QUERY_DEPENSES', 'QUERY_VENTES', 'CALENDRIER_CULTURAL'])) {
             $result = $this->actionExecutor->execute(
                 $agent['intent'],
                 $agent['params'] ?? [],

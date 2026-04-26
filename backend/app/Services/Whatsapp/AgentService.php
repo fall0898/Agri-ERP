@@ -76,6 +76,12 @@ Intents possibles:
 - QUERY_STOCK: voir les stocks disponibles
 - QUERY_DEPENSES: lister les dépenses récentes
 - QUERY_VENTES: lister les ventes récentes
+- CALENDRIER_CULTURAL: voir le programme de ma culture (stades, fertilisation, irrigation, ravageurs)
+  Exemples: "programme de mon oignon", "qu'est-ce que je dois faire", "stade de ma tomate", "calendrier"
+  params: { "culture_nom": "tomate"|null }
+- SIGNALER_TRAITEMENT: signaler un traitement phytosanitaire appliqué
+  Exemples: "j'ai mis du Spinosad 0.4ml/L ce matin", "traitement mildiou fait avec Ridomil 2.5g/L"
+  params: { "produit": "Spinosad 480 SC", "matiere_active": "spinosad", "dose": "0.4ml/L", "date_application": "YYYY-MM-DD" }
 - UNKNOWN: message non compris ou incomplet
 
 Retourne UNIQUEMENT ce JSON (sans texte autour, sans backticks):
@@ -88,10 +94,10 @@ Retourne UNIQUEMENT ce JSON (sans texte autour, sans backticks):
 
 Pour ADD_DEPENSE, params:
 - montant_fcfa (number, OBLIGATOIRE)
-- categorie (string parmi la liste, OBLIGATOIRE — devine selon contexte: urée→intrant, main d'œuvre→main_oeuvre, gasoil→carburant)
+- categorie (string parmi la liste, OBLIGATOIRE)
 - description (string courte)
 - date_depense (YYYY-MM-DD, aujourd'hui si non précisé)
-- campagne_id (utilise l'ID de la campagne active ou null)
+- campagne_id (ID campagne active ou null)
 
 Pour ADD_VENTE, params:
 - quantite_kg (number, OBLIGATOIRE)
@@ -102,18 +108,24 @@ Pour ADD_VENTE, params:
 - campagne_id (ID campagne active ou null)
 
 Pour ADD_MOUVEMENT_STOCK, params:
-- stock_nom (nom du produit en stock, string)
-- quantite (number)
-- type (achat|utilisation|perte)
-- date_mouvement (YYYY-MM-DD)
+- stock_nom (string), quantite (number), type (achat|utilisation|perte), date_mouvement (YYYY-MM-DD)
 
 Pour QUERY_*, params:
 - periode: "today", "week", "month", "all" (défaut: "month")
 
-Le champ "response" est le message WhatsApp:
-- Pour ADD_*/confirmation: résume ce que tu as compris en 1-2 phrases, demande "Tapez OUI pour confirmer"
-- Pour QUERY_*: response = "FETCH_REQUIRED"
-- Pour UNKNOWN: explique poliment ce que tu n'as pas compris
+Pour CALENDRIER_CULTURAL, params:
+- culture_nom: nom de la culture mentionnée ou null (si null, utiliser la première culture active)
+
+Pour SIGNALER_TRAITEMENT, params:
+- produit (string, OBLIGATOIRE — nom commercial ou description)
+- matiere_active (string normalisée : spinosad, mancozebe, metalaxyl, lambda, imidaclopride, tricyclazole, abamectine, iprodione, carbofuran, deltamethrine... — null si inconnu)
+- dose (string ex: "0.4ml/L", "2.5g/L")
+- date_application (YYYY-MM-DD, aujourd'hui si non précisé)
+
+Le champ "response":
+- Pour ADD_* et SIGNALER_TRAITEMENT : résume en 1-2 phrases, demande "Tapez OUI pour confirmer"
+- Pour QUERY_* et CALENDRIER_CULTURAL : response = "FETCH_REQUIRED"
+- Pour UNKNOWN : explique poliment
 
 Si un champ OBLIGATOIRE manque, mets intent=UNKNOWN et demande la précision.
 PROMPT;

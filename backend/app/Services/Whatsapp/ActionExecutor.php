@@ -2,20 +2,26 @@
 
 namespace App\Services\Whatsapp;
 
+use App\Models\AlerteCulturale;
 use App\Models\Culture;
 use App\Models\Depense;
 use App\Models\Stock;
+use App\Models\TraitementApplique;
 use App\Models\WhatsappUser;
 use App\Services\Finance\FinanceService;
+use App\Services\Meteo\MeteoService;
 use App\Services\Stock\StockService;
 use App\Services\Vente\VenteService;
+use App\Services\Whatsapp\CalendrierCulturalService;
 
 class ActionExecutor
 {
     public function __construct(
-        private VenteService   $venteService,
-        private StockService   $stockService,
-        private FinanceService $financeService,
+        private VenteService              $venteService,
+        private StockService              $stockService,
+        private FinanceService            $financeService,
+        private CalendrierCulturalService $calendrierService,
+        private MeteoService              $meteoService,
     ) {}
 
     public function execute(string $intent, array $params, WhatsappUser $waUser, string $language = 'fr'): array
@@ -28,6 +34,8 @@ class ActionExecutor
             'QUERY_STOCK'          => $this->queryStock($waUser, $language),
             'QUERY_DEPENSES'       => $this->queryDepenses($params, $waUser, $language),
             'QUERY_VENTES'         => $this->queryVentes($params, $waUser, $language),
+            'CALENDRIER_CULTURAL'  => $this->getCalendrierCultural($params, $waUser, $language),
+            'SIGNALER_TRAITEMENT'  => $this->signalerTraitement($params, $waUser, $language),
             default                => ['response' => $language === 'wo'
                 ? "Bëgguma xam looy wax. Jëfandikoo ci kanam."
                 : "Action non reconnue. Réessayez."],
@@ -183,6 +191,107 @@ class ActionExecutor
         $total = number_format($ventes->sum('montant_total_fcfa'), 0, ',', ' ');
 
         return ['response' => "🌾 " . ($language === 'wo' ? "Jaay yi (5 yi mujj):" : "Dernières ventes:") . "\n{$lines}\n\nTotal: {$total} FCFA"];
+    }
+
+    private function getCalendrierCultural(array $params, WhatsappUser $waUser, string $language): array
+    {
+        $cultures = Culture::where('organisation_id', $waUser->organisation_id)
+            ->where('statut', 'en_cours')
+            ->whereNotNull('type_culture')
+            ->whereNotNull('date_semis')
+            ->with('champ')
+            ->get();
+
+        if ($cultures->isEmpty()) {
+            return ['response' => $language === 'wo'
+                ? "Amul culture bu xeex bu amoon type ak date yu semis. Dëkk bi ci app bi."
+                : "Aucune culture active avec type et date de semis renseignés. Complétez l'application."];
+        }
+
+        $culture = null;
+        if (! empty($params['culture_nom'])) {
+            $culture = $cultures->first(fn ($c) =>
+                str_contains(strtolower($c->nom), strtolower($params['culture_nom']))
+                || str_contains(strtolower($c->type_culture ?? ''), strtolower($params['culture_nom']))
+            );
+        }
+        $culture ??= $cultures->first();
+
+        $champ   = $culture->champ;
+        $meteo   = $this->meteoService->getMeteo($champ?->zone_meteo, $champ?->latitude, $champ?->longitude);
+        $systeme = $waUser->systeme_arrosage ?? 'aspersion';
+
+        $message = $this->calendrierService->getConseils($culture, $meteo, $systeme, $language);
+
+        return ['response' => $message];
+    }
+
+    private function signalerTraitement(array $params, WhatsappUser $waUser, string $language): array
+    {
+        $culture = Culture::where('organisation_id', $waUser->organisation_id)
+            ->where('statut', 'en_cours')
+            ->orderByDesc('date_semis')
+            ->first();
+
+        if (! $culture) {
+            return ['response' => $language === 'wo'
+                ? "Amul culture bu xeex."
+                : "Aucune culture active pour enregistrer le traitement."];
+        }
+
+        $rotationAlert = null;
+        if (! empty($params['matiere_active'])) {
+            $nbRecents = TraitementApplique::where('culture_id', $culture->id)
+                ->where('matiere_active', $params['matiere_active'])
+                ->where('date_application', '>=', now()->subDays(30)->toDateString())
+                ->count();
+
+            if ($nbRecents >= 2) {
+                $alt = $this->getAlternatives($params['matiere_active']);
+                $rotationAlert = $language === 'wo'
+                    ? "\n\n⚠️ {$nbRecents}em naat ni jëfandikoo {$params['matiere_active']}. Soppi famille chimique: {$alt}"
+                    : "\n\n⚠️ {$nbRecents}ème application de {$params['matiere_active']} ce mois. Risque résistance — alternez avec : {$alt}";
+            }
+        }
+
+        TraitementApplique::create([
+            'culture_id'       => $culture->id,
+            'organisation_id'  => $waUser->organisation_id,
+            'user_id'          => $waUser->user_id,
+            'produit'          => $params['produit'],
+            'matiere_active'   => $params['matiere_active'] ?? null,
+            'dose'             => $params['dose'] ?? null,
+            'date_application' => $params['date_application'] ?? now()->toDateString(),
+            'source'           => 'whatsapp',
+        ]);
+
+        $msg = $language === 'wo'
+            ? "✅ Traitement bui doxe! {$params['produit']}" . ($params['dose'] ? " ({$params['dose']})" : '')
+            : "✅ Traitement enregistré ! {$params['produit']}" . ($params['dose'] ? " ({$params['dose']})" : '') . " le " . ($params['date_application'] ?? now()->toDateString()) . ".";
+
+        return ['response' => $msg . ($rotationAlert ?? '')];
+    }
+
+    private function getAlternatives(string $matiereActive): string
+    {
+        $rotations = [
+            'spinosad'      => 'Lambda-cyhalothrine ou Imidaclopride',
+            'mancozebe'     => 'Métalaxyl-M (Ridomil) ou Chlorothalonil',
+            'imidaclopride' => 'Spinosad ou Thiamethoxam',
+            'tricyclazole'  => 'Propiconazole ou Isoprothiolane',
+            'lambda'        => 'Spinosad ou Emamectine benzoate',
+            'metalaxyl'     => 'Mancozèbe ou Chlorothalonil',
+            'abamectine'    => 'Spiromesifen ou Bifenazate',
+        ];
+
+        $ma = strtolower($matiereActive);
+        foreach ($rotations as $keyword => $alternative) {
+            if (str_contains($ma, $keyword)) {
+                return $alternative;
+            }
+        }
+
+        return "un produit d'une famille chimique différente";
     }
 
     private function periodToFilters(string $periode): array
