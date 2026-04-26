@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: ['api/*']);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
     })
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule): void {
+        $schedule->command('whatsapp:alertes-proactives')->dailyAt('07:00');
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Sentry — capture toutes les exceptions en production
         $exceptions->report(function (\Throwable $e) {

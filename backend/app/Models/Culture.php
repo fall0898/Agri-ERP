@@ -38,6 +38,11 @@ class Culture extends Model
         return $this->belongsTo(Organisation::class);
     }
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function champ(): BelongsTo
     {
         return $this->belongsTo(Champ::class);
