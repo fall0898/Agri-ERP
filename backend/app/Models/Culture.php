@@ -14,7 +14,7 @@ class Culture extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'organisation_id', 'champ_id', 'campagne_id', 'nom', 'variete',
+        'organisation_id', 'champ_id', 'campagne_id', 'nom', 'type_culture', 'variete',
         'saison', 'annee', 'date_semis', 'date_recolte_prevue',
         'date_recolte_effective', 'superficie_cultivee_ha',
         'quantite_recoltee_kg', 'statut', 'notes',

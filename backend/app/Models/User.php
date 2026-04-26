@@ -16,7 +16,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'organisation_id', 'nom', 'email', 'telephone', 'password',
-        'role', 'est_actif', 'preferences_notification',
+        'role', 'est_actif', 'alertes_whatsapp_actives', 'preferences_notification',
         'derniere_connexion_at', 'onboarding_complete',
     ];
 
@@ -29,6 +29,7 @@ class User extends Authenticatable
         'derniere_connexion_at' => 'datetime',
         'password' => 'hashed',
         'est_actif' => 'boolean',
+        'alertes_whatsapp_actives' => 'boolean',
         'onboarding_complete' => 'boolean',
         'preferences_notification' => 'array',
     ];

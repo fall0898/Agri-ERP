@@ -16,7 +16,7 @@ class Champ extends Model
 
     protected $fillable = [
         'organisation_id', 'user_id', 'nom', 'superficie_ha',
-        'localisation', 'latitude', 'longitude', 'description', 'est_actif',
+        'localisation', 'zone_meteo', 'latitude', 'longitude', 'description', 'est_actif',
     ];
 
     protected $casts = [
