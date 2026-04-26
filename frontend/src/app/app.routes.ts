@@ -139,6 +139,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin.component').then(m => m.AdminComponent),
         title: 'Super Admin — Agri-ERP',
       },
+      {
+        path: 'whatsapp',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/whatsapp/whatsapp.component').then(m => m.WhatsappComponent),
+        title: 'Agent WhatsApp — Agri-ERP',
+      },
     ],
   },
 
