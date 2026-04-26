@@ -1,112 +1,70 @@
 <?php
-
 namespace App\Services\Meteo;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class MeteoService
 {
-    private string $apiKey;
-    private string $baseUrl;
-    private int $maxRetries = 3;
+    private array $zones = [
+        'dakar_niayes' => ['lat' => 14.72, 'lon' => -17.47],
+        'thies'        => ['lat' => 14.79, 'lon' => -16.92],
+        'louga'        => ['lat' => 15.62, 'lon' => -16.22],
+        'saint_louis'  => ['lat' => 16.03, 'lon' => -16.50],
+        'podor'        => ['lat' => 16.66, 'lon' => -15.20],
+        'dagana'       => ['lat' => 16.43, 'lon' => -16.06],
+        'kaolack'      => ['lat' => 14.15, 'lon' => -16.07],
+        'ziguinchor'   => ['lat' => 12.57, 'lon' => -16.27],
+        'tambacounda'  => ['lat' => 13.77, 'lon' => -13.67],
+    ];
 
-    public function __construct()
+    public function getMeteo(?string $zone, ?float $latitude, ?float $longitude): array
     {
-        $this->apiKey = config('services.openweather.key', '');
-        $this->baseUrl = config('services.openweather.url', 'https://api.openweathermap.org/data/2.5');
-    }
-
-    public function getMeteo(float $latitude, float $longitude): ?array
-    {
-        if (empty($this->apiKey)) {
-            return $this->getFallback();
+        if ($latitude && $longitude) {
+            $lat = $latitude;
+            $lon = $longitude;
+        } elseif ($zone && isset($this->zones[$zone])) {
+            $lat = $this->zones[$zone]['lat'];
+            $lon = $this->zones[$zone]['lon'];
+        } else {
+            $lat = 14.72;
+            $lon = -17.47;
         }
 
-        $cacheKey = "meteo_{$latitude}_{$longitude}";
+        try {
+            $response = Http::timeout(8)->get('https://api.open-meteo.com/v1/forecast', [
+                'latitude'       => $lat,
+                'longitude'      => $lon,
+                'daily'          => 'temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,precipitation_sum,et0_fao_evapotranspiration',
+                'timezone'       => 'Africa/Dakar',
+                'forecast_days'  => 7,
+            ]);
 
-        return Cache::remember($cacheKey, 10800, function () use ($latitude, $longitude) {
-            return $this->fetchWithCircuitBreaker($latitude, $longitude);
-        });
-    }
-
-    private function fetchWithCircuitBreaker(float $lat, float $lon): ?array
-    {
-        $circuitKey = "meteo_circuit_open";
-
-        if (Cache::get($circuitKey, false)) {
-            return $this->getFallback();
-        }
-
-        for ($attempt = 1; $attempt <= $this->maxRetries; $attempt++) {
-            try {
-                $current = Http::timeout(5)->get("{$this->baseUrl}/weather", [
-                    'lat' => $lat,
-                    'lon' => $lon,
-                    'appid' => $this->apiKey,
-                    'units' => 'metric',
-                    'lang' => 'fr',
-                ]);
-
-                $forecast = Http::timeout(5)->get("{$this->baseUrl}/forecast", [
-                    'lat' => $lat,
-                    'lon' => $lon,
-                    'appid' => $this->apiKey,
-                    'units' => 'metric',
-                    'lang' => 'fr',
-                    'cnt' => 24,
-                ]);
-
-                if ($current->successful() && $forecast->successful()) {
-                    Cache::forget("meteo_circuit_open");
-                    return $this->formatResponse($current->json(), $forecast->json());
-                }
-            } catch (\Exception $e) {
-                Log::warning("Tentative météo {$attempt}/{$this->maxRetries} échouée : {$e->getMessage()}");
-
-                if ($attempt < $this->maxRetries) {
-                    sleep(pow(2, $attempt));
-                }
+            if (! $response->successful()) {
+                return $this->defaultMeteo();
             }
+
+            $daily = $response->json('daily') ?? [];
+
+            return [
+                'temp_max_moy' => round(collect($daily['temperature_2m_max'] ?? [])->avg() ?? 32, 1),
+                'temp_min_moy' => round(collect($daily['temperature_2m_min'] ?? [])->avg() ?? 22, 1),
+                'humidite_moy' => (int) round(collect($daily['relative_humidity_2m_mean'] ?? [])->avg() ?? 60),
+                'pluie_totale' => round(collect($daily['precipitation_sum'] ?? [])->sum() ?? 0, 1),
+                'et0_moy'      => round(collect($daily['et0_fao_evapotranspiration'] ?? [])->avg() ?? 5, 1),
+            ];
+        } catch (\Throwable) {
+            return $this->defaultMeteo();
         }
-
-        Cache::put("meteo_circuit_open", true, 300);
-        return $this->getFallback();
     }
 
-    private function formatResponse(array $current, array $forecast): array
-    {
-        $previsions = collect($forecast['list'] ?? [])
-            ->groupBy(fn($item) => date('Y-m-d', $item['dt']))
-            ->take(3)
-            ->map(fn($items, $date) => [
-                'date' => $date,
-                'temp_min' => round(collect($items)->min('main.temp_min'), 1),
-                'temp_max' => round(collect($items)->max('main.temp_max'), 1),
-                'description' => $items[0]['weather'][0]['description'] ?? '',
-                'icone' => $items[0]['weather'][0]['icon'] ?? '',
-            ])
-            ->values()
-            ->toArray();
-
-        return [
-            'temperature' => round($current['main']['temp'] ?? 0, 1),
-            'ressentie' => round($current['main']['feels_like'] ?? 0, 1),
-            'humidite' => $current['main']['humidity'] ?? 0,
-            'vent_kmh' => round(($current['wind']['speed'] ?? 0) * 3.6, 1),
-            'description' => $current['weather'][0]['description'] ?? '',
-            'icone' => $current['weather'][0]['icon'] ?? '',
-            'prevision_3j' => $previsions,
-            'meteo_indisponible' => false,
-        ];
-    }
-
-    private function getFallback(): array
+    private function defaultMeteo(): array
     {
         return [
-            'meteo_indisponible' => true,
-            'message' => 'Service météo temporairement indisponible.',
+            'temp_max_moy' => 32.0,
+            'temp_min_moy' => 22.0,
+            'humidite_moy' => 60,
+            'pluie_totale' => 0.0,
+            'et0_moy'      => 5.0,
         ];
     }
 }
