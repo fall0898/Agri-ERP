@@ -72,4 +72,9 @@ class Culture extends Model
     {
         return $this->hasMany(MouvementStock::class);
     }
+
+    public function traitements(): HasMany
+    {
+        return $this->hasMany(TraitementApplique::class);
+    }
 }

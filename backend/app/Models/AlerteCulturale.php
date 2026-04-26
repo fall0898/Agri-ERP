@@ -17,4 +17,9 @@ class AlerteCulturale extends Model
     {
         return $this->belongsTo(Culture::class);
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }
