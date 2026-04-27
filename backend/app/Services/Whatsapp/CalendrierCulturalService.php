@@ -121,15 +121,18 @@ class CalendrierCulturalService
 
     private function stadesOignon(): array
     {
+        // Cycle post-transplant (pépinière 40-45j séparée). Source: ISRA/ANCAR/GIZ Niayes
+        // Variétés recommandées Niayes: Violet de Galmi (principale), Safari F1, Bénina F1, Red Creole
+        // Rendement attendu: 15-25 t/ha (bonnes pratiques ISRA: jusqu'à 30-40 t/ha)
         return [
-            ['nom' => 'Reprise',             'j_debut' => 0,   'j_fin' => 10,  'alerte' => 'Arrosage quotidien, surveiller fonte de semis (Pythium)'],
-            ['nom' => '2 feuilles',           'j_debut' => 11,  'j_fin' => 20,  'alerte' => 'Sarclage léger, surveiller Pythium en sol saturé'],
-            ['nom' => '4-6 feuilles',         'j_debut' => 21,  'j_fin' => 50,  'alerte' => 'Fertilisation N1 (urée), herbicide si adventices'],
-            ['nom' => 'Initiation bulbaire',  'j_debut' => 51,  'j_fin' => 65,  'alerte' => "Apport K1, espacer arrosage — STOP azote à partir d'ici"],
-            ['nom' => 'Grossissement bulbe',  'j_debut' => 66,  'j_fin' => 105, 'alerte' => 'Fertilisation K2, réduction arrosage progressive, AUCUN azote'],
-            ['nom' => 'Verse des feuilles',   'j_debut' => 90,  'j_fin' => 115, 'alerte' => 'Arrêt progressif des apports hydriques'],
-            ['nom' => 'Maturation',           'j_debut' => 105, 'j_fin' => 120, 'alerte' => 'Arrêt arrosage J+110, surveiller Botrytis sur col'],
-            ['nom' => 'Récolte',              'j_debut' => 115, 'j_fin' => 999, 'alerte' => 'Récolter le matin, pré-ressuyage 3-5j au champ'],
+            ['nom' => 'Reprise',             'j_debut' => 0,   'j_fin' => 14,  'alerte' => 'Arrosage quotidien. Fond de plantation déjà apporté. Variétés Niayes: Violet de Galmi, Safari F1, Bénina F1. Surveiller fonte de semis (Pythium)'],
+            ['nom' => '2 feuilles',           'j_debut' => 15,  'j_fin' => 25,  'alerte' => 'APPORT N1 (J+15) : Urée 100 kg/ha. Sarclage léger. Surveiller Pythium en sol saturé'],
+            ['nom' => '4-6 feuilles',         'j_debut' => 26,  'j_fin' => 55,  'alerte' => 'APPORT N2 (J+45) : Urée 75 kg/ha. Herbicide si adventices. Dernier apport azoté recommandé'],
+            ['nom' => 'Initiation bulbaire',  'j_debut' => 56,  'j_fin' => 70,  'alerte' => "APPORT K1 (J+60) : Sulfate de potasse 75 kg/ha. Espacer arrosage — STOP azote absolu"],
+            ['nom' => 'Grossissement bulbe',  'j_debut' => 71,  'j_fin' => 105, 'alerte' => 'APPORT K2 (J+80) : Sulfate de potasse 50 kg/ha. Réduction arrosage progressive. AUCUN azote'],
+            ['nom' => 'Verse des feuilles',   'j_debut' => 90,  'j_fin' => 115, 'alerte' => 'Arrêt progressif apports hydriques. Surveiller Botrytis (pourriture col) si humidité >70%'],
+            ['nom' => 'Maturation',           'j_debut' => 106, 'j_fin' => 120, 'alerte' => 'Arrêt arrosage J+110. Surveiller Botrytis sur col. Pré-ressuyage au champ 3-5j avant arrachage'],
+            ['nom' => 'Récolte',              'j_debut' => 115, 'j_fin' => 999, 'alerte' => 'Récolter le matin. Séchage 3-5j au champ puis conservation en silo aéré. Rendement cible: 20-30 t/ha'],
         ];
     }
 
@@ -229,10 +232,13 @@ class CalendrierCulturalService
     private function getFertilisationStade(string $type, string $stadeNom, float $surface): ?string
     {
         $plans = [
+            // Source: ISRA/ANCAR/GIZ — Programme oignon Niayes, Sénégal
             'oignon' => [
-                '4-6 feuilles'        => "Urée 46% : " . round(50 * $surface) . " kg (50 kg/ha) — Apport N1",
-                'Initiation bulbaire' => "Sulfate de potasse 50% K₂O : " . round(60 * $surface) . " kg (60 kg/ha) — Apport K1\n⚠️ DERNIER apport azoté possible",
-                'Grossissement bulbe' => "Sulfate de potasse 50% K₂O : " . round(40 * $surface) . " kg (40 kg/ha) — Apport K2\nZéro azote désormais",
+                'Reprise'             => "Fond pré-plantation (avant transplant) :\n• NPK 6-20-10 : " . round(300 * $surface) . " kg (300 kg/ha)\n• Fumure organique : " . round(10 * $surface) . " t (10 t/ha)\nIncorporer lors de la préparation du sol",
+                '2 feuilles'          => "Urée 46% : " . round(100 * $surface) . " kg (100 kg/ha) — Apport N1 (J+15)\nFractionnement en 2 passages si risque de pluie",
+                '4-6 feuilles'        => "Urée 46% : " . round(75 * $surface) . " kg (75 kg/ha) — Apport N2 (J+45)\n⚠️ Dernier apport azoté — STOP azote après ce stade",
+                'Initiation bulbaire' => "Sulfate de potasse 50% K₂O : " . round(75 * $surface) . " kg (75 kg/ha) — Apport K1 (J+60)\n🚫 ZÉRO azote désormais — tout apport N nuit à la conservation",
+                'Grossissement bulbe' => "Sulfate de potasse 50% K₂O : " . round(50 * $surface) . " kg (50 kg/ha) — Apport K2 (J+80)\nAzote interdit. Potassium améliore conservation et calibre",
             ],
             'tomate' => [
                 'Croissance végétative' => "Urée 46% : " . round(60 * $surface) . " kg (60 kg/ha) — Apport N1",
@@ -294,14 +300,15 @@ class CalendrierCulturalService
 
         // Kc FAO-56 par culture et stade
         $kcMap = [
+            // Kc FAO-56 oignon — adapté cycle Niayes post-transplant
             'oignon' => [
                 'Reprise'             => 0.50,
                 '2 feuilles'          => 0.65,
-                '4-6 feuilles'        => 0.75,
+                '4-6 feuilles'        => 0.80,
                 'Initiation bulbaire' => 1.05,
                 'Grossissement bulbe' => 0.90,
-                'Verse des feuilles'  => 0.80,
-                'Maturation'          => 0.70,
+                'Verse des feuilles'  => 0.75,
+                'Maturation'          => 0.65,
                 'Récolte'             => 0.00,
             ],
             'tomate' => [
@@ -414,14 +421,14 @@ class CalendrierCulturalService
         $alertes  = [];
 
         if ($type === 'oignon') {
-            if ($temp < 25 && $humidite < 45) {
-                $alertes[] = "Thrips tabaci : T°<25°C + humidité<45% = conditions favorables. Seuil : 2 thrips/feuille. Traitement : Spinosad 480 SC 0.1ml/L (ou Karate 0.5ml/L, rotation obligatoire)";
+            if ($humidite < 55) {
+                $alertes[] = "Thrips tabaci : humidité<55% (conditions Niayes fréquentes) = risque élevé. Seuil: 2 thrips/feuille. Traitement: Spinosad 480 SC 0.1ml/L ou Karate Zeon 0.5ml/L (rotation obligatoire entre familles)";
             }
             if ($humidite > 85 && $pluie > 0) {
-                $alertes[] = "Mildiou (Peronospora) : humidité>85% + pluie = risque élevé. Traitement préventif Mancozèbe 80% 2.5g/L toutes les 7-10j";
+                $alertes[] = "Mildiou (Peronospora destructor) : humidité>85% + pluie = risque élevé. Traitement préventif Mancozèbe 80% 2.5g/L toutes les 7-10j. Eviter arrosage en soirée";
             }
             if (in_array($stadeNom, ['Verse des feuilles', 'Maturation']) && $humidite > 70) {
-                $alertes[] = "Botrytis (pourriture col) : humidité>70% au stade verse = risque. Traitement : Iprodione 500 SC 1.5ml/L dès 5% plants atteints";
+                $alertes[] = "Botrytis (pourriture col) : humidité>70% au stade verse = risque élevé. Traitement: Iprodione 500 SC 1.5ml/L dès 5% plants atteints. Eviter apports hydriques tardifs";
             }
         }
 
