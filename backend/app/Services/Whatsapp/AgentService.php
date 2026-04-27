@@ -77,8 +77,9 @@ Intents possibles:
 - QUERY_DEPENSES: lister les dépenses récentes
 - QUERY_VENTES: lister les ventes récentes
 - CALENDRIER_CULTURAL: voir le programme de ma culture (stades, fertilisation, irrigation, ravageurs)
-  Exemples: "programme de mon oignon", "qu'est-ce que je dois faire", "stade de ma tomate", "calendrier"
-  params: { "culture_nom": "tomate"|null }
+  Exemples: "programme de mon oignon", "qu'est-ce que je dois faire", "stade de ma tomate", "calendrier", "conseils pastèque", "mon concombre", "programme melon", "courgette", "fraisier"
+  Cultures supportées: oignon, tomate, riz, pasteque, melon, concombre, courgette, fraisier
+  params: { "culture_nom": "oignon"|"tomate"|"riz"|"pasteque"|"melon"|"concombre"|"courgette"|"fraisier"|null }
 - SIGNALER_TRAITEMENT: signaler un traitement phytosanitaire appliqué
   Exemples: "j'ai mis du Spinosad 0.4ml/L ce matin", "traitement mildiou fait avec Ridomil 2.5g/L"
   params: { "produit": "Spinosad 480 SC", "matiere_active": "spinosad", "dose": "0.4ml/L", "date_application": "YYYY-MM-DD" }
