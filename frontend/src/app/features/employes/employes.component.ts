@@ -459,70 +459,68 @@ import { DateFrPipe } from '../../core/pipes/date-fr.pipe';
 
       <!-- ─── MODAL FINANCEMENT ──────────────────────────────────── -->
       @if (showFinancementModal()) {
-        <div class="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4" (click)="showFinancementModal.set(false)">
-          <div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-xl max-h-[92vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100 shrink-0">
+        <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" (click)="showFinancementModal.set(false)">
+          <div class="bg-white rounded-2xl w-full max-w-md shadow-xl flex flex-col max-h-[90vh]" (click)="$event.stopPropagation()">
+            <div class="shrink-0 flex items-center justify-between p-6 border-b border-neutral-100">
               <h2 class="font-semibold text-neutral-900">Enregistrer un financement</h2>
-              <button (click)="showFinancementModal.set(false)" class="text-neutral-400 text-xl">&times;</button>
+              <button type="button" (click)="showFinancementModal.set(false)" class="text-neutral-400 text-xl">&times;</button>
             </div>
-            <form [formGroup]="financementForm" (ngSubmit)="saveFinancement()" class="flex flex-col flex-1 overflow-hidden">
-              <div class="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+            <form id="fin-form" [formGroup]="financementForm" (ngSubmit)="saveFinancement()" class="overflow-y-auto p-6 space-y-4">
+              <div>
+                <label class="form-label">Employé *</label>
+                <select formControlName="employe_id" class="form-input">
+                  <option value="">Sélectionner...</option>
+                  @for (emp of employes(); track emp.id) {
+                    <option [value]="emp.id">{{ emp.nom }}</option>
+                  }
+                </select>
+                @if (financementForm.get('employe_id')?.invalid && financementForm.get('employe_id')?.touched) {
+                  <p class="form-error">Employé requis.</p>
+                }
+              </div>
+              <div>
+                <label class="form-label">Motif *</label>
+                <input type="text" formControlName="motif" class="form-input" placeholder="ex: Campagne oignon 2025-2026"/>
+                @if (financementForm.get('motif')?.invalid && financementForm.get('motif')?.touched) {
+                  <p class="form-error">Motif requis.</p>
+                }
+              </div>
+              <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="form-label">Employé *</label>
-                  <select formControlName="employe_id" class="form-input">
-                    <option value="">Sélectionner...</option>
-                    @for (emp of employes(); track emp.id) {
-                      <option [value]="emp.id">{{ emp.nom }}</option>
-                    }
+                  <label class="form-label">Montant (FCFA) *</label>
+                  <input type="number" formControlName="montant_fcfa" class="form-input" min="1"/>
+                  @if (financementForm.get('montant_fcfa')?.invalid && financementForm.get('montant_fcfa')?.touched) {
+                    <p class="form-error">Montant requis.</p>
+                  }
+                </div>
+                <div>
+                  <label class="form-label">Date *</label>
+                  <input type="date" formControlName="date_financement" class="form-input"/>
+                </div>
+                <div class="col-span-2">
+                  <label class="form-label">Mode de remise</label>
+                  <select formControlName="mode_paiement" class="form-input">
+                    <option value="especes">Espèces</option>
+                    <option value="virement">Virement</option>
+                    <option value="orange_money">Orange Money</option>
+                    <option value="wave">Wave</option>
                   </select>
-                  @if (financementForm.get('employe_id')?.invalid && financementForm.get('employe_id')?.touched) {
-                    <p class="form-error">Employé requis.</p>
-                  }
                 </div>
-                <div>
-                  <label class="form-label">Motif *</label>
-                  <input type="text" formControlName="motif" class="form-input" placeholder="ex: Campagne oignon 2025-2026"/>
-                  @if (financementForm.get('motif')?.invalid && financementForm.get('motif')?.touched) {
-                    <p class="form-error">Motif requis.</p>
-                  }
+                <div class="col-span-2">
+                  <label class="form-label">Notes</label>
+                  <textarea formControlName="notes" class="form-input h-16 resize-none" placeholder="Informations complémentaires..."></textarea>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="form-label">Montant (FCFA) *</label>
-                    <input type="number" formControlName="montant_fcfa" class="form-input" min="1"/>
-                    @if (financementForm.get('montant_fcfa')?.invalid && financementForm.get('montant_fcfa')?.touched) {
-                      <p class="form-error">Montant requis.</p>
-                    }
-                  </div>
-                  <div>
-                    <label class="form-label">Date *</label>
-                    <input type="date" formControlName="date_financement" class="form-input"/>
-                  </div>
-                  <div class="col-span-2">
-                    <label class="form-label">Mode de remise</label>
-                    <select formControlName="mode_paiement" class="form-input">
-                      <option value="especes">Espèces</option>
-                      <option value="virement">Virement</option>
-                      <option value="orange_money">Orange Money</option>
-                      <option value="wave">Wave</option>
-                    </select>
-                  </div>
-                  <div class="col-span-2">
-                    <label class="form-label">Notes</label>
-                    <textarea formControlName="notes" class="form-input h-16 resize-none" placeholder="Informations complémentaires..."></textarea>
-                  </div>
-                </div>
-                <p class="text-xs text-neutral-400 bg-amber-50 rounded-lg px-3 py-2">
-                  💡 Une dépense <strong>Financement individuel</strong> sera automatiquement créée dans votre comptabilité.
-                </p>
               </div>
-              <div class="px-6 py-4 border-t border-neutral-100 shrink-0 flex gap-3">
-                <button type="button" (click)="showFinancementModal.set(false)" class="btn-secondary flex-1 h-10 text-sm">Annuler</button>
-                <button type="submit" [disabled]="savingFinancement()" class="btn-primary flex-1 h-10 text-sm">
-                  {{ savingFinancement() ? 'Enregistrement...' : 'Valider le financement' }}
-                </button>
-              </div>
+              <p class="text-xs text-neutral-400 bg-amber-50 rounded-lg px-3 py-2">
+                💡 Une dépense <strong>Financement individuel</strong> sera automatiquement créée dans votre comptabilité.
+              </p>
             </form>
+            <div class="shrink-0 flex gap-3 px-6 pb-6 pt-4 border-t border-neutral-100">
+              <button type="button" (click)="showFinancementModal.set(false)" class="btn-secondary flex-1 h-10 text-sm">Annuler</button>
+              <button type="submit" form="fin-form" [disabled]="savingFinancement()" class="btn-primary flex-1 h-10 text-sm">
+                {{ savingFinancement() ? 'Enregistrement...' : 'Valider le financement' }}
+              </button>
+            </div>
           </div>
         </div>
       }
