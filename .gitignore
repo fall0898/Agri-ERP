@@ -1,0 +1,12 @@
+# Données de production / migration — ne jamais commiter
+railway_export.json
+railway_backup.sql
+render_import.mjs
+render_dedup.mjs
+export_db.mjs
+export_org.mjs
+kadiar_seed_runner.mjs
+kadiar_seed.py
+backup_*.sql
+*_export.json
+*_backup.sql

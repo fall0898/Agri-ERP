@@ -135,7 +135,7 @@ PROMPT;
         $messageUtilisateur .= "\n\nAnalyse cette photo et identifie la maladie ou le ravageur. Réponds en JSON strict.";
 
         try {
-            $client   = new AnthropicClient(apiKey: env('ANTHROPIC_API_KEY'));
+            $client   = new AnthropicClient(apiKey: config('services.anthropic.key'));
             $response = $client->messages->create(
                 model:     'claude-opus-4-5',
                 maxTokens: 1024,

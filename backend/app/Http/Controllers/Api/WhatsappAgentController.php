@@ -189,7 +189,7 @@ class WhatsappAgentController extends Controller
         $imageData = base64_encode($download->body());
 
         try {
-            $client   = new AnthropicClient(apiKey: env('ANTHROPIC_API_KEY'));
+            $client   = new AnthropicClient(apiKey: config('services.anthropic.key'));
             $response = $client->messages->create(
                 model:     'claude-opus-4-5',
                 maxTokens: 512,

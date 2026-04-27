@@ -11,7 +11,7 @@ class AgentService
 
     public function __construct()
     {
-        $this->client = new AnthropicClient(apiKey: env('ANTHROPIC_API_KEY'));
+        $this->client = new AnthropicClient(apiKey: config('services.anthropic.key'));
     }
 
     public function process(string $text, Organisation $organisation): array

@@ -34,8 +34,9 @@ Route::post('/webhooks/wave', [\App\Http\Controllers\Api\WebhookController::clas
 Route::post('/webhooks/orange-money', [\App\Http\Controllers\Api\WebhookController::class, 'orangeMoney']);
 Route::post('/webhooks/stripe', fn() => response()->json(['status' => 'ok']));
 
-// WhatsApp webhook (public — sécurisé par signature Twilio en production)
-Route::post('/whatsapp/webhook', [\App\Http\Controllers\Api\WhatsappAgentController::class, 'handle']);
+// WhatsApp webhook — validé par signature Twilio (TWILIO_VALIDATE_SIGNATURE=true en prod)
+Route::post('/whatsapp/webhook', [\App\Http\Controllers\Api\WhatsappAgentController::class, 'handle'])
+    ->middleware(['throttle:60,1', \App\Http\Middleware\ValidateTwilioSignature::class]);
 
 /*
 |--------------------------------------------------------------------------
@@ -226,7 +227,7 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
 
     // --- Diagnostic Phytosanitaire IA ---
     Route::prefix('diagnostic')->group(function () {
-        Route::post('/analyser', [DiagnosticController::class, 'analyser']);
+        Route::post('/analyser', [DiagnosticController::class, 'analyser'])->middleware('throttle:10,1');
         Route::get('/historique', [DiagnosticController::class, 'historique']);
     });
 
@@ -275,43 +276,5 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\CheckActiveUser', 'App\H
         Route::patch('/users/{id}/activer', [Admin\UserController::class, 'toggleActif']);
         Route::delete('/users/{id}', [Admin\UserController::class, 'destroy']);
 
-        // TMP: assigner campagne_id aux enregistrements orphelins d'une org (à supprimer après usage)
-        Route::post('/tenants/{orgId}/assign-campagne', function ($orgId) {
-            $campagne = \App\Models\CampagneAgricole::where('organisation_id', $orgId)->where('est_courante', true)->first();
-            if (!$campagne) return response()->json(['error' => 'Pas de campagne courante'], 404);
-            $deps = \App\Models\Depense::where('organisation_id', $orgId)->whereNull('campagne_id')->update(['campagne_id' => $campagne->id]);
-            $ventes = \App\Models\Vente::where('organisation_id', $orgId)->whereNull('campagne_id')->update(['campagne_id' => $campagne->id]);
-            return response()->json(['ok' => true, 'campagne_id' => $campagne->id, 'depenses_updated' => $deps, 'ventes_updated' => $ventes]);
-        });
-
-        // TMP: supprimer un remboursement financement spécifique + sa vente auto (à supprimer après usage)
-        Route::delete('/remboursements-financement/{id}', function ($id) {
-            $remb = \App\Models\RemboursementFinancement::findOrFail($id);
-            if ($remb->vente_id) \App\Models\Vente::where('id', $remb->vente_id)->forceDelete();
-            $remb->delete();
-            return response()->json(['ok' => true, 'remboursement_id' => $id]);
-        });
-
-        // TMP: reset données Kadiar (à supprimer après usage)
-        Route::delete('/tenants/{id}/reset-data', function ($id) {
-            $org = \App\Models\Organisation::findOrFail($id);
-            // Supprimer dans l'ordre pour respecter les FK
-            \App\Models\RemboursementFinancement::whereHas('financement', fn($q) => $q->where('organisation_id', $id))->delete();
-            \App\Models\FinancementIndividuel::where('organisation_id', $id)->delete();
-            \App\Models\PaiementSalaire::where('organisation_id', $id)->delete();
-            \App\Models\Media::where('organisation_id', $id)->delete();
-            \App\Models\UtilisationIntrant::whereHas('culture', fn($q) => $q->where('organisation_id', $id))->delete();
-            \App\Models\MouvementStock::whereHas('stock', fn($q) => $q->where('organisation_id', $id))->delete();
-            \App\Models\Depense::where('organisation_id', $id)->forceDelete();
-            \App\Models\Vente::where('organisation_id', $id)->forceDelete();
-            \App\Models\Tache::where('organisation_id', $id)->forceDelete();
-            \App\Models\Culture::where('organisation_id', $id)->forceDelete();
-            \App\Models\Stock::where('organisation_id', $id)->forceDelete();
-            \App\Models\Champ::where('organisation_id', $id)->forceDelete();
-            \App\Models\Employe::where('organisation_id', $id)->forceDelete();
-            \App\Models\Intrant::where('organisation_id', $id)->delete();
-            \App\Models\User::where('organisation_id', $id)->where('role', '!=', 'super_admin')->delete();
-            return response()->json(['ok' => true, 'message' => "Données de l'org {$id} supprimées"]);
-        });
     });
 });
