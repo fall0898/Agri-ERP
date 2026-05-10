@@ -125,6 +125,17 @@ class DashboardController extends Controller
     {
         $orgId      = $request->user()->organisation_id;
         $campagneId = $request->query('campagne_id') ? (int) $request->query('campagne_id') : null;
+
+        if ($campagneId) {
+            abort_unless(
+                \App\Models\CampagneAgricole::withoutGlobalScopes()
+                    ->where('id', $campagneId)
+                    ->where('organisation_id', $orgId)
+                    ->exists(),
+                403
+            );
+        }
+
         $cacheKey   = "dashboard_tout_{$orgId}" . ($campagneId ? "_c{$campagneId}" : '');
 
         $data = Cache::remember($cacheKey, 120, function () use ($orgId, $campagneId) {

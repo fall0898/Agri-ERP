@@ -66,7 +66,7 @@ class VenteController extends Controller
             'user_id' => $request->user()->id,
         ]);
 
-        Cache::forget("dashboard_tout_{$request->user()->organisation_id}");
+        $this->invalidateDashboardCache($request->user()->organisation_id);
 
         return (new VenteResource($vente))->response()->setStatusCode(201);
     }
@@ -126,5 +126,18 @@ class VenteController extends Controller
         $pdf = $this->recuPdfService->generer($vente);
 
         return $pdf->download("recu-VNT-{$vente->id}.pdf");
+    }
+
+    private function invalidateDashboardCache(int $orgId): void
+    {
+        Cache::forget("dashboard_tout_{$orgId}");
+
+        $campagneIds = \App\Models\CampagneAgricole::withoutGlobalScopes()
+            ->where('organisation_id', $orgId)
+            ->pluck('id');
+
+        foreach ($campagneIds as $cid) {
+            Cache::forget("dashboard_tout_{$orgId}_c{$cid}");
+        }
     }
 }

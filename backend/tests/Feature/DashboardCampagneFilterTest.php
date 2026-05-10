@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CampagneAgricole;
 use App\Models\Depense;
 use App\Models\Vente;
+use Illuminate\Support\Facades\Cache;
 use Tests\CreatesAuthenticatedTenant;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,6 +13,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 class DashboardCampagneFilterTest extends TestCase
 {
     use RefreshDatabase, CreatesAuthenticatedTenant;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+    }
 
     public function test_dashboard_filtre_par_campagne_id(): void
     {

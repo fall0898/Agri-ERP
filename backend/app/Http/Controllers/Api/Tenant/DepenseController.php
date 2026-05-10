@@ -55,7 +55,7 @@ class DepenseController extends Controller
             'user_id' => $request->user()->id,
         ]);
 
-        Cache::forget("dashboard_tout_{$request->user()->organisation_id}");
+        $this->invalidateDashboardCache($request->user()->organisation_id);
 
         return (new DepenseResource($depense->load(['champ:id,nom', 'campagne:id,nom'])))->response()->setStatusCode(201);
     }
@@ -116,5 +116,18 @@ class DepenseController extends Controller
         $depense->delete();
 
         return response()->json(['message' => 'Dépense supprimée avec succès.']);
+    }
+
+    private function invalidateDashboardCache(int $orgId): void
+    {
+        Cache::forget("dashboard_tout_{$orgId}");
+
+        $campagneIds = \App\Models\CampagneAgricole::withoutGlobalScopes()
+            ->where('organisation_id', $orgId)
+            ->pluck('id');
+
+        foreach ($campagneIds as $cid) {
+            Cache::forget("dashboard_tout_{$orgId}_c{$cid}");
+        }
     }
 }
