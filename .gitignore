@@ -1,3 +1,6 @@
+# Git worktrees
+.worktrees/
+
 # Données de production / migration — ne jamais commiter
 railway_export.json
 railway_backup.sql
