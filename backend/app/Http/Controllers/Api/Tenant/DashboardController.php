@@ -123,11 +123,13 @@ class DashboardController extends Controller
 
     public function tout(Request $request): JsonResponse
     {
-        $orgId    = $request->user()->organisation_id;
-        $cacheKey = "dashboard_tout_{$orgId}";
+        $orgId      = $request->user()->organisation_id;
+        $campagneId = $request->query('campagne_id') ? (int) $request->query('campagne_id') : null;
+        $cacheKey   = "dashboard_tout_{$orgId}" . ($campagneId ? "_c{$campagneId}" : '');
 
-        $data = Cache::remember($cacheKey, 120, function () use ($orgId) {
-            $finance = $this->financeService->getResume($orgId, []);
+        $data = Cache::remember($cacheKey, 120, function () use ($orgId, $campagneId) {
+            $filters = $campagneId ? ['campagne_id' => $campagneId] : [];
+            $finance = $this->financeService->getResume($orgId, $filters);
 
             $kpis = [
                 'total_ventes'        => $finance['total_ventes'],
@@ -140,13 +142,15 @@ class DashboardController extends Controller
                     ->whereNotNull('seuil_alerte')->whereRaw('quantite_actuelle <= seuil_alerte')->count(),
             ];
 
-            $ventesRecentes   = Vente::where('organisation_id', $orgId)
+            $ventesRecentes = Vente::where('organisation_id', $orgId)
                 ->where(fn($q) => $q->where('est_auto_generee', false)->orWhereNull('est_auto_generee'))
+                ->when($campagneId, fn($q) => $q->where('campagne_id', $campagneId))
                 ->with(['champ:id,nom', 'culture:id,nom'])
                 ->orderByDesc('date_vente')->limit(5)->get();
 
             $depensesRecentes = Depense::where('organisation_id', $orgId)
                 ->where('categorie', '!=', 'financement_individuel')
+                ->when($campagneId, fn($q) => $q->where('campagne_id', $campagneId))
                 ->with(['champ:id,nom', 'user:id,nom'])
                 ->orderByDesc('date_depense')->limit(5)->get();
 
@@ -161,9 +165,9 @@ class DashboardController extends Controller
                 ->orderByRaw("CASE WHEN priorite = 'urgente' THEN 1 WHEN priorite = 'haute' THEN 2 WHEN priorite = 'normale' THEN 3 WHEN priorite = 'basse' THEN 4 ELSE 5 END")
                 ->orderBy('date_debut')->limit(10)->get();
 
-            $graphiqueFinance  = $this->financeService->getGraphiqueFinance($orgId, null);
-            $graphiqueDepenses = $this->financeService->getDepensesParCategorie($orgId, null);
-            $parChamp = $this->financeService->getParChamp($orgId, []);
+            $graphiqueFinance  = $this->financeService->getGraphiqueFinance($orgId, $campagneId);
+            $graphiqueDepenses = $this->financeService->getDepensesParCategorie($orgId, $campagneId);
+            $parChamp          = $this->financeService->getParChamp($orgId, $filters);
 
             return compact(
                 'kpis', 'ventesRecentes', 'depensesRecentes',
