@@ -223,7 +223,7 @@ export class FinancesComponent implements OnInit {
     effect(() => {
       this.campagneService.campagneActive(); // track signal
       this.load();
-    });
+    }, { allowSignalWrites: true });
   }
 
   // Dépenses non rattachées à un champ = total_depenses − Σ dépenses par champ

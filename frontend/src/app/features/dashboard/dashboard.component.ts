@@ -710,7 +710,7 @@ export class DashboardComponent implements OnInit {
     effect(() => {
       this.campagneService.campagneActive(); // track the signal
       this.load();
-    });
+    }, { allowSignalWrites: true });
   }
 
   loading           = signal(true);

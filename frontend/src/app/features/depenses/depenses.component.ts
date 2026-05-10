@@ -268,7 +268,7 @@ export class DepensesComponent implements OnInit {
     effect(() => {
       this.campagneService.campagneActive(); // track signal
       this.load();
-    });
+    }, { allowSignalWrites: true });
   }
 
   loading = signal(true);
