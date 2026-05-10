@@ -49,7 +49,7 @@ import { CampagneAgricole } from '../../core/models';
           </button>
 
           @if (showCampagneDropdown()) {
-            <div class="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-72 rounded-xl overflow-hidden z-50"
+            <div class="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-72 rounded-xl overflow-hidden z-50 animate-fade-up"
                  style="box-shadow:0 8px 24px rgba(0,0,0,0.15);border:1px solid #e5e7eb;">
               <div style="background:#1a2332;padding:10px 16px;">
                 <span style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:600;">Changer de campagne</span>
@@ -198,11 +198,17 @@ export class TopbarComponent {
   campagneService = inject(CampagneService);
   showCampagneDropdown = signal(false);
 
-  toggleAvatar(): void { this.showAvatar.update(v => !v); }
+  toggleAvatar(): void {
+    this.showCampagneDropdown.set(false);
+    this.showAvatar.update(v => !v);
+  }
 
   logout(): void { this.auth.logout(); }
 
-  toggleCampagneDropdown(): void { this.showCampagneDropdown.update(v => !v); }
+  toggleCampagneDropdown(): void {
+    this.showAvatar.set(false);
+    this.showCampagneDropdown.update(v => !v);
+  }
 
   selectCampagne(c: CampagneAgricole): void {
     this.campagneService.basculer(c);
