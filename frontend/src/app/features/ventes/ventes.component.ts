@@ -1,4 +1,5 @@
-import { Component, signal, inject, OnInit, computed, effect } from '@angular/core';
+import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -253,10 +254,9 @@ export class VentesComponent implements OnInit {
   campagneService = inject(CampagneService);
 
   constructor() {
-    effect(() => {
-      this.campagneService.campagneActive(); // track signal
-      this.load();
-    }, { allowSignalWrites: true });
+    toObservable(this.campagneService.campagneActive)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.load());
   }
 
   loading = signal(true);

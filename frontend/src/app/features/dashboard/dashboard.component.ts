@@ -1,4 +1,5 @@
-import { Component, signal, inject, OnInit, computed, effect } from '@angular/core';
+import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -707,10 +708,9 @@ export class DashboardComponent implements OnInit {
   private campagneService = inject(CampagneService);
 
   constructor() {
-    effect(() => {
-      this.campagneService.campagneActive(); // track the signal
-      this.load();
-    }, { allowSignalWrites: true });
+    toObservable(this.campagneService.campagneActive)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.load());
   }
 
   loading           = signal(true);

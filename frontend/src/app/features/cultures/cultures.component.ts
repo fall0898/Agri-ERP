@@ -1,4 +1,5 @@
-import { Component, signal, inject, OnInit, effect } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -216,10 +217,9 @@ export class CulturesComponent implements OnInit {
   campagneService = inject(CampagneService);
 
   constructor() {
-    effect(() => {
-      this.campagneService.campagneActive(); // track signal
-      this.load();
-    }, { allowSignalWrites: true });
+    toObservable(this.campagneService.campagneActive)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.load());
   }
 
   loading = signal(true);
