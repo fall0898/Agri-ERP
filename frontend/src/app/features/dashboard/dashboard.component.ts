@@ -1,7 +1,8 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, computed, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CampagneService } from '../../core/services/campagne.service';
 import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
 import { DateFrPipe } from '../../core/pipes/date-fr.pipe';
 
@@ -703,6 +704,14 @@ import { DateFrPipe } from '../../core/pipes/date-fr.pipe';
 export class DashboardComponent implements OnInit {
   auth = inject(AuthService);
   private api = inject(ApiService);
+  private campagneService = inject(CampagneService);
+
+  constructor() {
+    effect(() => {
+      this.campagneService.campagneActive(); // track the signal
+      this.load();
+    });
+  }
 
   loading           = signal(true);
   totalVentes       = signal(0);
@@ -738,8 +747,13 @@ export class DashboardComponent implements OnInit {
     return sign + new Intl.NumberFormat('fr-FR').format(Math.round(abs));
   }
 
-  ngOnInit(): void {
-    this.api.get<any>('/api/dashboard').subscribe({
+  ngOnInit(): void { }
+
+  private load(): void {
+    const c = this.campagneService.campagneActive();
+    const params = c ? { campagne_id: c.id } : {};
+    this.loading.set(true);
+    this.api.get<any>('/api/dashboard', params).subscribe({
       next: res => {
         const k = res.kpis ?? {};
         this.nbChamps.set(k.nb_champs ?? 0);
