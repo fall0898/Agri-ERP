@@ -1,8 +1,9 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, computed, effect } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CampagneService } from '../../core/services/campagne.service';
 import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
 import { DateFrPipe } from '../../core/pipes/date-fr.pipe';
 import { VenteFormComponent } from './vente-form.component';
@@ -20,6 +21,14 @@ import { VenteFormComponent } from './vente-form.component';
         <div>
           <h1>Ventes</h1>
           <p class="pg-sub mt-0.5">Enregistrez et suivez vos ventes agricoles</p>
+          @if (campagneService.estFiltre()) {
+            <div class="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1 rounded-lg text-xs"
+                 style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Filtré sur <strong class="ml-1">{{ campagneService.campagneActive()?.nom }}</strong>
+              <button (click)="campagneService.reinitialiser()" class="ml-1 text-amber-600 hover:text-amber-800 font-bold">✕</button>
+            </div>
+          }
         </div>
         @if (auth.isAdmin()) {
           <button (click)="openModal()" class="btn-primary">
@@ -242,6 +251,14 @@ export class VentesComponent implements OnInit {
   private api = inject(ApiService);
   private notif = inject(NotificationService);
   auth = inject(AuthService);
+  campagneService = inject(CampagneService);
+
+  constructor() {
+    effect(() => {
+      this.campagneService.campagneActive(); // track signal
+      this.load();
+    });
+  }
 
   loading = signal(true);
   showModal = signal(false);
@@ -278,7 +295,6 @@ export class VentesComponent implements OnInit {
   maxVente = computed(() => Math.max(0, ...this.filtered().map(v => Number(v.montant_total_fcfa))));
 
   ngOnInit(): void {
-    this.load();
     this.api.get<any>('/api/cultures').subscribe({
       next: res => this.cultures.set(res.data ?? []),
     });
@@ -289,7 +305,10 @@ export class VentesComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.api.get<any>('/api/ventes').subscribe({
+    const c = this.campagneService.campagneActive();
+    const params: any = {};
+    if (c) params['campagne_id'] = c.id;
+    this.api.get<any>('/api/ventes', params).subscribe({
       next: res => { this.allVentes.set(res.data ?? []); this.loading.set(false); },
       error: () => this.loading.set(false),
     });

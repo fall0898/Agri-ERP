@@ -1,8 +1,9 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CampagneService } from '../../core/services/campagne.service';
 import { DateFrPipe } from '../../core/pipes/date-fr.pipe';
 import { MediaGalleryComponent } from '../../shared/media-gallery/media-gallery.component';
 
@@ -28,6 +29,14 @@ const STATUT_COLORS: Record<string, string> = {
         <div>
           <h1>Cultures</h1>
           <p class="pg-sub">Suivez vos cycles culturaux</p>
+          @if (campagneService.estFiltre()) {
+            <div class="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1 rounded-lg text-xs"
+                 style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Filtré sur <strong class="ml-1">{{ campagneService.campagneActive()?.nom }}</strong>
+              <button (click)="campagneService.reinitialiser()" class="ml-1 text-amber-600 hover:text-amber-800 font-bold">✕</button>
+            </div>
+          }
         </div>
         @if (auth.isAdmin()) {
           <button (click)="openModal()" class="btn-primary h-9 px-4 text-sm">+ Nouvelle culture</button>
@@ -205,6 +214,14 @@ export class CulturesComponent implements OnInit {
   private notif = inject(NotificationService);
   private fb = inject(FormBuilder);
   auth = inject(AuthService);
+  campagneService = inject(CampagneService);
+
+  constructor() {
+    effect(() => {
+      this.campagneService.campagneActive(); // track signal
+      this.load();
+    });
+  }
 
   loading = signal(true);
   saving = signal(false);
@@ -244,7 +261,6 @@ export class CulturesComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.load();
     this.api.get<any>('/api/champs').subscribe({
       next: res => this.champs.set(res.data ?? []),
     });
@@ -252,9 +268,12 @@ export class CulturesComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.api.get<any>('/api/cultures').subscribe({
+    const c = this.campagneService.campagneActive();
+    const params: any = {};
+    if (c) params['campagne_id'] = c.id;
+    this.api.get<any>('/api/cultures', params).subscribe({
       next: res => {
-        this.cultures.set(res.data ?? []);
+        this.cultures.set(Array.isArray(res) ? res : res.data?.data ?? res.data ?? []);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
