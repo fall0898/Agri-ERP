@@ -1,4 +1,5 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe, SlicePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
@@ -918,6 +919,7 @@ export class ParametresComponent implements OnInit {
 
   campagneService     = inject(CampagneService);
   private route       = inject(ActivatedRoute);
+  private destroyRef  = inject(DestroyRef);
 
   // Campagnes tab
   showCreateModal     = signal(false);
@@ -927,7 +929,6 @@ export class ParametresComponent implements OnInit {
   campDebut           = signal('');
   campFin             = signal('');
   campNotes           = signal('');
-  cloturantId         = signal<number | null>(null);
   resumesCache        = signal<Record<number, any>>({});
 
   campagneCourante    = computed(() => this.campagneService.campagnes().find(c => c.est_courante) ?? null);
@@ -1020,7 +1021,7 @@ export class ParametresComponent implements OnInit {
     }
 
     // Pre-select tab from query params (e.g., ?tab=campagnes from topbar link)
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       if (params['tab']) this.activeTab.set(params['tab']);
     });
   }
@@ -1164,6 +1165,7 @@ export class ParametresComponent implements OnInit {
         this.campagneService.setCourante(c.id);
         this.showCreateModal.set(false);
         this.creatingCampagne.set(false);
+        this.campagneError.set('');
         this.campNom.set(''); this.campDebut.set(''); this.campFin.set(''); this.campNotes.set('');
       },
       error: () => {
