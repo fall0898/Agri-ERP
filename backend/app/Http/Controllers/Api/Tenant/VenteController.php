@@ -103,6 +103,8 @@ class VenteController extends Controller
 
         $vente = $this->venteService->modifier($vente, $validated);
 
+        $this->invalidateDashboardCache($request->user()->organisation_id);
+
         return new VenteResource($vente);
     }
 
@@ -114,7 +116,9 @@ class VenteController extends Controller
             return response()->json(['message' => 'Les ventes générées automatiquement (remboursements) ne peuvent pas être supprimées.'], 403);
         }
 
+        $orgId = $vente->organisation_id;
         $vente->delete();
+        $this->invalidateDashboardCache($orgId);
 
         return response()->json(['message' => 'Vente supprimée avec succès.']);
     }

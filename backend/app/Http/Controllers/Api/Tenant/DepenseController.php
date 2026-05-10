@@ -90,6 +90,8 @@ class DepenseController extends Controller
 
         $depense->update($validated);
 
+        $this->invalidateDashboardCache($request->user()->organisation_id);
+
         return new DepenseResource($depense->fresh()->load(['champ:id,nom', 'campagne:id,nom']));
     }
 
@@ -113,7 +115,9 @@ class DepenseController extends Controller
             ], 403);
         }
 
+        $orgId = $depense->organisation_id;
         $depense->delete();
+        $this->invalidateDashboardCache($orgId);
 
         return response()->json(['message' => 'Dépense supprimée avec succès.']);
     }
