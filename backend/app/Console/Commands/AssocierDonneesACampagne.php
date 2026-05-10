@@ -9,15 +9,19 @@ use Illuminate\Support\Facades\DB;
 
 class AssocierDonneesACampagne extends Command
 {
-    protected $signature   = 'campagne:associer-donnees {--dry-run : Afficher les changements sans les appliquer}';
-    protected $description = 'Associe les dépenses, ventes et cultures sans campagne_id à la campagne active de chaque organisation';
+    protected $signature   = 'campagne:associer-donnees {--dry-run : Afficher les changements sans les appliquer} {--tous : Réassigner toutes les données, même celles déjà liées à une autre campagne}';
+    protected $description = 'Associe les dépenses, ventes et cultures à la campagne active de chaque organisation';
 
     public function handle(): int
     {
         $dryRun = $this->option('dry-run');
+        $tous   = $this->option('tous');
 
         if ($dryRun) {
             $this->warn('Mode dry-run — aucune modification ne sera appliquée.');
+        }
+        if ($tous) {
+            $this->warn('Mode --tous : toutes les données seront réassignées à la campagne active.');
         }
 
         $organisations = Organisation::all();
@@ -37,19 +41,13 @@ class AssocierDonneesACampagne extends Command
                 continue;
             }
 
+            $query = fn(string $table) => DB::table($table)->where('organisation_id', $org->id);
+            $filter = fn($q) => $tous ? $q : $q->whereNull('campagne_id');
+
             $counts = [
-                'depenses' => DB::table('depenses')
-                    ->where('organisation_id', $org->id)
-                    ->whereNull('campagne_id')
-                    ->count(),
-                'ventes'   => DB::table('ventes')
-                    ->where('organisation_id', $org->id)
-                    ->whereNull('campagne_id')
-                    ->count(),
-                'cultures' => DB::table('cultures')
-                    ->where('organisation_id', $org->id)
-                    ->whereNull('campagne_id')
-                    ->count(),
+                'depenses' => $filter($query('depenses'))->count(),
+                'ventes'   => $filter($query('ventes'))->count(),
+                'cultures' => $filter($query('cultures'))->count(),
             ];
 
             $total = array_sum($counts);
@@ -63,21 +61,9 @@ class AssocierDonneesACampagne extends Command
             $this->line("    dépenses : {$counts['depenses']} | ventes : {$counts['ventes']} | cultures : {$counts['cultures']}");
 
             if (! $dryRun) {
-                DB::table('depenses')
-                    ->where('organisation_id', $org->id)
-                    ->whereNull('campagne_id')
-                    ->update(['campagne_id' => $campagne->id]);
-
-                DB::table('ventes')
-                    ->where('organisation_id', $org->id)
-                    ->whereNull('campagne_id')
-                    ->update(['campagne_id' => $campagne->id]);
-
-                DB::table('cultures')
-                    ->where('organisation_id', $org->id)
-                    ->whereNull('campagne_id')
-                    ->update(['campagne_id' => $campagne->id]);
-
+                foreach (['depenses', 'ventes', 'cultures'] as $table) {
+                    $filter($query($table))->update(['campagne_id' => $campagne->id]);
+                }
                 $this->line("    <fg=green>✓ Migré.</>");
             }
         }
