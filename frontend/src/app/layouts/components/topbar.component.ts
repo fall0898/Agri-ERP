@@ -1,14 +1,16 @@
 import { Component, output, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, SlicePipe } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { OfflineService } from '../../core/services/offline.service';
+import { CampagneService } from '../../core/services/campagne.service';
+import { CampagneAgricole } from '../../core/models';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink, CommonModule, SlicePipe],
   template: `
     <header class="h-16 flex items-center justify-between px-4 lg:px-6 shrink-0"
             style="background: #FFFDF8; border-bottom: 1.5px solid #E5DDD2; box-shadow: 0 1px 4px rgba(26,48,32,.05);">
@@ -32,6 +34,57 @@ import { OfflineService } from '../../core/services/offline.service';
           </div>
           <span class="font-bold text-sm text-neutral-900">Agri-ERP</span>
         </div>
+      </div>
+
+      <!-- Centre: sélecteur de campagne -->
+      <div class="relative flex-1 flex justify-center">
+        @if (campagneService.campagnes().length > 0) {
+          <button (click)="toggleCampagneDropdown()"
+                  class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors"
+                  style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;">
+            <span class="w-2 h-2 rounded-full flex-shrink-0"
+                  [style.background]="campagneService.campagneActive()?.est_courante ? '#16a34a' : '#9ca3af'"></span>
+            <span class="truncate max-w-32">{{ campagneService.campagneActive()?.nom ?? 'Toutes campagnes' }}</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+
+          @if (showCampagneDropdown()) {
+            <div class="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-72 rounded-xl overflow-hidden z-50"
+                 style="box-shadow:0 8px 24px rgba(0,0,0,0.15);border:1px solid #e5e7eb;">
+              <div style="background:#1a2332;padding:10px 16px;">
+                <span style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:600;">Changer de campagne</span>
+              </div>
+              <div style="background:#fff;">
+                @for (c of campagneService.campagnes(); track c.id) {
+                  <button (click)="selectCampagne(c)"
+                          class="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-neutral-50"
+                          [style.background]="campagneService.campagneActive()?.id === c.id ? '#f0fdf4' : ''"
+                          style="border-bottom:1px solid #f3f4f6;">
+                    <span class="w-2 h-2 rounded-full flex-shrink-0"
+                          [style.background]="c.est_courante ? '#16a34a' : '#d1d5db'"></span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-semibold truncate"
+                           [style.color]="campagneService.campagneActive()?.id === c.id ? '#15803d' : '#374151'">
+                        {{ c.nom }}
+                      </div>
+                      <div class="text-xs" style="color:#9ca3af;">
+                        {{ c.est_courante ? '● Campagne active' : 'Clôturée · ' + (c.date_debut | slice:0:7) + ' – ' + (c.date_fin | slice:0:7) }}
+                      </div>
+                    </div>
+                    @if (campagneService.campagneActive()?.id === c.id) {
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    }
+                  </button>
+                }
+                <a routerLink="/parametres" [queryParams]="{tab:'campagnes'}" (click)="showCampagneDropdown.set(false)"
+                   class="flex items-center justify-center px-4 py-2.5 text-xs text-neutral-500 hover:text-neutral-700 transition-colors"
+                   style="border-top:1px solid #f3f4f6;">
+                  Gérer les campagnes dans Paramètres →
+                </a>
+              </div>
+            </div>
+          }
+        }
       </div>
 
       <!-- Right: actions -->
@@ -131,6 +184,9 @@ import { OfflineService } from '../../core/services/offline.service';
     @if (showAvatar()) {
       <div class="fixed inset-0 z-40" (click)="showAvatar.set(false)"></div>
     }
+    @if (showCampagneDropdown()) {
+      <div class="fixed inset-0 z-40" (click)="showCampagneDropdown.set(false)"></div>
+    }
   `,
 })
 export class TopbarComponent {
@@ -139,8 +195,17 @@ export class TopbarComponent {
   notifService = inject(NotificationService);
   offline = inject(OfflineService);
   showAvatar = signal(false);
+  campagneService = inject(CampagneService);
+  showCampagneDropdown = signal(false);
 
   toggleAvatar(): void { this.showAvatar.update(v => !v); }
 
   logout(): void { this.auth.logout(); }
+
+  toggleCampagneDropdown(): void { this.showCampagneDropdown.update(v => !v); }
+
+  selectCampagne(c: CampagneAgricole): void {
+    this.campagneService.basculer(c);
+    this.showCampagneDropdown.set(false);
+  }
 }
