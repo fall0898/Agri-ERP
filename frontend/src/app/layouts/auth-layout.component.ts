@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationStart } f
 import { SidebarComponent } from './components/sidebar.component';
 import { TopbarComponent } from './components/topbar.component';
 import { NotificationService } from '../core/services/notification.service';
+import { CampagneService } from '../core/services/campagne.service';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -109,11 +110,13 @@ export class AuthLayoutComponent implements OnInit, OnDestroy {
   sidebarCollapsed = signal(false);
   showMobileMenu = signal(false);
   private notifService = inject(NotificationService);
+  private campagneService = inject(CampagneService);
   private router = inject(Router);
   private routerSub?: Subscription;
 
   ngOnInit(): void {
     this.notifService.startPolling();
+    this.campagneService.charger();
     this.routerSub = this.router.events.pipe(
       filter(e => e instanceof NavigationStart)
     ).subscribe(() => this.showMobileMenu.set(false));
