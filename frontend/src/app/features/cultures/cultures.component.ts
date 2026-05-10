@@ -30,8 +30,7 @@ const STATUT_COLORS: Record<string, string> = {
           <h1>Cultures</h1>
           <p class="pg-sub">Suivez vos cycles culturaux</p>
           @if (campagneService.estFiltre()) {
-            <div class="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1 rounded-lg text-xs"
-                 style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;">
+            <div class="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1 rounded-lg text-xs bg-amber-50 border border-amber-200 text-amber-800">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               Filtré sur <strong class="ml-1">{{ campagneService.campagneActive()?.nom }}</strong>
               <button (click)="campagneService.reinitialiser()" class="ml-1 text-amber-600 hover:text-amber-800 font-bold">✕</button>
