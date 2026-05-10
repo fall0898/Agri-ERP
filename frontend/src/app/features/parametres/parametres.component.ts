@@ -773,7 +773,7 @@ interface PlanData {
                     </div>
                   </div>
                   @if (auth.isAdmin()) {
-                    <button (click)="showCreateModal.set(true)"
+                    <button (click)="cloturerEtCreer()"
                             style="background:#fff;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;">
                       ⏹ Clôturer
                     </button>
@@ -927,6 +927,7 @@ export class ParametresComponent implements OnInit {
   campDebut           = signal('');
   campFin             = signal('');
   campNotes           = signal('');
+  cloturantId         = signal<number | null>(null);
   resumesCache        = signal<Record<number, any>>({});
 
   campagneCourante    = computed(() => this.campagneService.campagnes().find(c => c.est_courante) ?? null);
@@ -1170,6 +1171,10 @@ export class ParametresComponent implements OnInit {
         this.creatingCampagne.set(false);
       },
     });
+  }
+
+  cloturerEtCreer(): void {
+    this.showCreateModal.set(true);
   }
 
   loadResumeForCampagne(c: CampagneAgricole): void {
