@@ -1,8 +1,9 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, computed, effect } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
+import { CampagneService } from '../../core/services/campagne.service';
 
 @Component({
   selector: 'app-finances',
@@ -15,10 +16,19 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
         <div>
           <h1>Finances</h1>
           <p class="pg-sub">Analyse financière de votre exploitation</p>
+          @if (campagneService.estFiltre() && periode() === 'campagne') {
+            <div class="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1 rounded-lg text-xs bg-amber-50 border border-amber-200 text-amber-800">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Filtré sur <strong class="ml-1">{{ campagneService.campagneActive()?.nom }}</strong>
+              <button (click)="campagneService.reinitialiser(); load()" class="ml-1 text-amber-600 hover:text-amber-800 font-bold">✕</button>
+            </div>
+          }
         </div>
         <div class="flex gap-2">
           <select class="form-input h-9 text-sm" (change)="periode.set($any($event.target).value); load()">
-            <option value="campagne" selected>Campagne 2025/26</option>
+            <option value="campagne" [selected]="periode() === 'campagne'">
+              {{ campagneService.campagneActive()?.nom ?? 'Campagne courante' }}
+            </option>
             <option value="mois">Ce mois</option>
             <option value="3mois">3 mois</option>
             <option value="6mois">6 mois</option>
@@ -198,6 +208,7 @@ import { CurrencyFcfaPipe } from '../../core/pipes/currency-fcfa.pipe';
 export class FinancesComponent implements OnInit {
   private api = inject(ApiService);
   private notif = inject(NotificationService);
+  campagneService = inject(CampagneService);
 
   loading = signal(true);
   exportingExcel = signal(false);
@@ -208,6 +219,13 @@ export class FinancesComponent implements OnInit {
   champsMap = signal<Record<number, string>>({});
   periode = signal('campagne');
 
+  constructor() {
+    effect(() => {
+      this.campagneService.campagneActive(); // track signal
+      this.load();
+    });
+  }
+
   // Dépenses non rattachées à un champ = total_depenses − Σ dépenses par champ
   depensesGenerales = computed(() => {
     const total = this.resume()?.total_depenses ?? 0;
@@ -216,7 +234,6 @@ export class FinancesComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.load();
     // Charger les noms des champs pour l'affichage
     this.api.get<any>('/api/champs').subscribe({
       next: res => {
@@ -230,19 +247,27 @@ export class FinancesComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    const { debut, fin } = this.plage();
+    const c = this.campagneService.campagneActive();
 
-    this.api.get<any>('/api/finance/resume', { date_debut: debut, date_fin: fin }).subscribe({
+    let baseParams: any = {};
+    if (this.periode() === 'campagne' && c) {
+      baseParams = { campagne_id: c.id };
+    } else if (this.periode() !== 'campagne') {
+      const { debut, fin } = this.plage();
+      if (debut) baseParams['date_debut'] = debut;
+      if (fin)   baseParams['date_fin']   = fin;
+    }
+    // Note: if periode === 'campagne' but no active campaign → no params → all data
+
+    this.api.get<any>('/api/finance/resume', baseParams).subscribe({
       next: res => { this.resume.set(res); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
-
-    this.api.get<any>('/api/finance/par-culture', { date_debut: debut, date_fin: fin }).subscribe({
+    this.api.get<any>('/api/finance/par-culture', baseParams).subscribe({
       next: res => this.parCulture.set(Array.isArray(res) ? res : res.data ?? []),
       error: () => {},
     });
-
-    this.api.get<any>('/api/finance/par-champ', { date_debut: debut, date_fin: fin }).subscribe({
+    this.api.get<any>('/api/finance/par-champ', baseParams).subscribe({
       next: res => this.parChamp.set(Array.isArray(res) ? res : res.data ?? []),
       error: () => {},
     });
