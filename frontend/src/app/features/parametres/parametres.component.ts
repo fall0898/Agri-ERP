@@ -1,8 +1,12 @@
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DecimalPipe, SlicePipe } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { CampagneService } from '../../core/services/campagne.service';
+import { CampagneAgricole } from '../../core/models';
 
 interface PlanData {
   organisation: any;
@@ -25,7 +29,7 @@ interface PlanData {
 @Component({
   selector: 'app-parametres',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, DecimalPipe, SlicePipe],
   styles: [`
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
 
@@ -745,6 +749,146 @@ interface PlanData {
         </div>
       }
 
+      <!-- ── Campagnes ── -->
+      @if (activeTab() === 'campagnes') {
+        <div class="space-y-4">
+
+          <!-- Campagne active -->
+          <div class="p-card">
+            <div class="p-card-header">
+              <div class="p-card-title">Campagne active</div>
+              <div class="p-card-desc">La saison en cours sur toute l'application</div>
+            </div>
+            <div class="p-card-body">
+              @if (campagneService.campagnes().length === 0) {
+                <p style="color:var(--sub);font-size:13px;">Chargement…</p>
+              } @else if (campagneCourante()) {
+                <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:14px;display:flex;align-items:center;gap:14px;">
+                  <div style="width:40px;height:40px;background:#dcfce7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌱</div>
+                  <div style="flex:1">
+                    <div style="font-size:15px;font-weight:700;color:#1a2332">{{ campagneCourante()!.nom }}</div>
+                    <div style="font-size:12px;color:#6b7280;margin-top:2px">
+                      {{ campagneCourante()!.date_debut | slice:0:10 }} → {{ campagneCourante()!.date_fin | slice:0:10 }}
+                      · <span style="color:#16a34a">En cours</span>
+                    </div>
+                  </div>
+                  @if (auth.isAdmin()) {
+                    <button (click)="showCreateModal.set(true)"
+                            style="background:#fff;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;">
+                      ⏹ Clôturer
+                    </button>
+                  }
+                </div>
+              } @else {
+                <p style="color:var(--sub);font-size:13px;">Aucune campagne active.</p>
+              }
+            </div>
+          </div>
+
+          <!-- Créer une nouvelle campagne (visible to admin only) -->
+          @if (auth.isAdmin()) {
+            <div (click)="showCreateModal.set(true)"
+                 style="background:#fff;border:1.5px dashed #a3e635;border-radius:12px;padding:16px;cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:36px;height:36px;background:#f7fee7;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">＋</div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:#365314;">Créer une nouvelle campagne</div>
+                  <div style="font-size:11px;color:#6b7280;">Définir le nom et les dates de la prochaine saison</div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Historique des campagnes -->
+          <div class="p-card">
+            <div class="p-card-header">
+              <div class="p-card-title">Historique des campagnes</div>
+              <div class="p-card-desc">Cliquez sur une campagne pour la consulter</div>
+            </div>
+            <div class="p-card-body" style="padding:0">
+              @if (campagnesPassees().length === 0) {
+                <p style="padding:16px;color:var(--sub);font-size:13px;">Aucune campagne passée.</p>
+              }
+              @for (c of campagnesPassees(); track c.id; let last = $last) {
+                <div (click)="naviguerVersCampagne(c); loadResumeForCampagne(c)"
+                     class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-neutral-50 transition-colors"
+                     [style.border-bottom]="last ? 'none' : '1px solid #f3f4f6'">
+                  <div style="width:32px;height:32px;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;">📁</div>
+                  <div class="flex-1 min-w-0">
+                    <div style="font-size:13px;font-weight:600;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.nom }}</div>
+                    <div style="font-size:11px;color:#9ca3af;">{{ c.date_debut | slice:0:7 }} – {{ c.date_fin | slice:0:7 }} · Clôturée</div>
+                  </div>
+                  <div class="text-right flex-shrink-0">
+                    @if (resumesCache()[c.id]) {
+                      <div style="font-size:12px;font-weight:700;"
+                           [style.color]="resumesCache()[c.id].solde_net >= 0 ? '#16a34a' : '#dc2626'">
+                        {{ resumesCache()[c.id].solde_net >= 0 ? '+' : '' }}{{ resumesCache()[c.id].solde_net | number }} FCFA
+                      </div>
+                      <div style="font-size:10px;color:#9ca3af;">solde net</div>
+                    } @else {
+                      <button (click)="$event.stopPropagation(); loadResumeForCampagne(c)"
+                              style="font-size:11px;color:#6b7280;background:none;border:none;cursor:pointer;padding:0;">
+                        Voir bilan
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Modal créer / démarrer une nouvelle campagne -->
+          @if (showCreateModal()) {
+            <div class="fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,.5);">
+              <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:420px;margin:16px;">
+                <div style="font-size:16px;font-weight:700;color:#1a2332;margin-bottom:4px;">Nouvelle campagne</div>
+                <div style="font-size:12px;color:#6b7280;margin-bottom:20px;">Définissez le nom et les dates de la nouvelle saison</div>
+
+                @if (campagneError()) {
+                  <div style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:16px;">
+                    {{ campagneError() }}
+                  </div>
+                }
+
+                <div class="f-row">
+                  <label class="f-label">Nom de la campagne *</label>
+                  <input type="text" class="f-input" placeholder="Ex : Saison 2026/2027"
+                         [value]="campNom()" (input)="campNom.set($any($event.target).value)"/>
+                </div>
+                <div class="f-row">
+                  <label class="f-label">Date de début *</label>
+                  <input type="date" class="f-input"
+                         [value]="campDebut()" (input)="campDebut.set($any($event.target).value)"/>
+                </div>
+                <div class="f-row">
+                  <label class="f-label">Date de fin *</label>
+                  <input type="date" class="f-input"
+                         [value]="campFin()" (input)="campFin.set($any($event.target).value)"/>
+                </div>
+                <div class="f-row">
+                  <label class="f-label">Notes (optionnel)</label>
+                  <input type="text" class="f-input" placeholder="Observations…"
+                         [value]="campNotes()" (input)="campNotes.set($any($event.target).value)"/>
+                </div>
+
+                <div style="display:flex;gap:12px;margin-top:20px;">
+                  <button (click)="showCreateModal.set(false); campagneError.set('')"
+                          style="flex:1;padding:10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;">
+                    Annuler
+                  </button>
+                  <button (click)="creerCampagne()" [disabled]="creatingCampagne()"
+                          style="flex:1;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;opacity:1;"
+                          [style.opacity]="creatingCampagne() ? '0.6' : '1'">
+                    {{ creatingCampagne() ? 'Création…' : 'Créer et activer' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+
+        </div>
+      }
+
     </div>
   </div>
 </div>
@@ -772,12 +916,33 @@ export class ParametresComponent implements OnInit {
   waInput   = signal('');
   waError   = signal('');
 
+  campagneService     = inject(CampagneService);
+  private route       = inject(ActivatedRoute);
+
+  // Campagnes tab
+  showCreateModal     = signal(false);
+  creatingCampagne    = signal(false);
+  campagneError       = signal('');
+  campNom             = signal('');
+  campDebut           = signal('');
+  campFin             = signal('');
+  campNotes           = signal('');
+  resumesCache        = signal<Record<number, any>>({});
+
+  campagneCourante    = computed(() => this.campagneService.campagnes().find(c => c.est_courante) ?? null);
+  campagnesPassees    = computed(() =>
+    this.campagneService.campagnes()
+      .filter(c => !c.est_courante)
+      .sort((a, b) => b.date_debut.localeCompare(a.date_debut))
+  );
+
   tabs = [
     { id: 'profil',        label: 'Mon profil',    icon: this.svg('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z') },
     { id: 'motdepasse',    label: 'Mot de passe',  icon: this.svg('M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z') },
     { id: 'organisation',  label: 'Exploitation',  icon: this.svg('M2 20h20M5 20V8l7-5 7 5v12') },
     { id: 'notifications', label: 'Notifications', icon: this.svg('M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0') },
     { id: 'whatsapp', label: 'WhatsApp', icon: this.svg('M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z') },
+    { id: 'campagnes', label: 'Campagnes', icon: this.svg('M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z') },
   ];
 
   notifPrefs = [
@@ -847,6 +1012,16 @@ export class ParametresComponent implements OnInit {
     });
 
     this.loadWhatsappStatus();
+
+    // Load campaigns if not yet loaded
+    if (!this.campagneService.campagnes().length) {
+      this.campagneService.charger();
+    }
+
+    // Pre-select tab from query params (e.g., ?tab=campagnes from topbar link)
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) this.activeTab.set(params['tab']);
+    });
   }
 
   prefEnabled(key: string): boolean { return this.prefs()[key] !== false; }
@@ -968,6 +1143,48 @@ export class ParametresComponent implements OnInit {
         this.notif.error('Erreur lors de la déliaison. Réessayez.');
       },
     });
+  }
+
+  creerCampagne(): void {
+    if (!this.campNom() || !this.campDebut() || !this.campFin()) {
+      this.campagneError.set('Nom, date de début et date de fin sont requis.');
+      return;
+    }
+    this.creatingCampagne.set(true);
+    this.campagneError.set('');
+
+    this.campagneService.creer({
+      nom: this.campNom(),
+      date_debut: this.campDebut(),
+      date_fin: this.campFin(),
+      notes: this.campNotes() || undefined,
+    }).subscribe({
+      next: (c: any) => {
+        this.campagneService.setCourante(c.id);
+        this.showCreateModal.set(false);
+        this.creatingCampagne.set(false);
+        this.campNom.set(''); this.campDebut.set(''); this.campFin.set(''); this.campNotes.set('');
+      },
+      error: () => {
+        this.campagneError.set('Erreur lors de la création de la campagne.');
+        this.creatingCampagne.set(false);
+      },
+    });
+  }
+
+  loadResumeForCampagne(c: CampagneAgricole): void {
+    if (this.resumesCache()[c.id]) return;
+    this.api.get<any>('/api/finance/resume', { campagne_id: c.id }).subscribe({
+      next: res => {
+        const cache = { ...this.resumesCache() };
+        cache[c.id] = res;
+        this.resumesCache.set(cache);
+      },
+    });
+  }
+
+  naviguerVersCampagne(c: CampagneAgricole): void {
+    this.campagneService.basculer(c);
   }
 
   private svg(path: string): string {
