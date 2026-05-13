@@ -12,11 +12,11 @@ import { CampagneAgricole } from '../../core/models';
   standalone: true,
   imports: [RouterLink, CommonModule, SlicePipe],
   template: `
-    <header class="h-16 flex items-center justify-between px-4 lg:px-6 shrink-0"
+    <header class="flex flex-wrap items-center justify-between px-4 lg:px-6 shrink-0 py-2 lg:py-0 lg:h-16 gap-y-1"
             style="background: #FFFDF8; border-bottom: 1.5px solid #E5DDD2; box-shadow: 0 1px 4px rgba(26,48,32,.05);">
 
       <!-- Left: hamburger (mobile) -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 h-10 lg:h-auto">
         <button (click)="menuToggle.emit()"
                 class="lg:hidden p-2 rounded-xl text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -36,8 +36,8 @@ import { CampagneAgricole } from '../../core/models';
         </div>
       </div>
 
-      <!-- Centre: sélecteur de campagne -->
-      <div class="relative flex-1 flex justify-center">
+      <!-- Centre: sélecteur de campagne — 2e ligne sur mobile, centre sur desktop -->
+      <div class="order-3 lg:order-none w-full lg:w-auto lg:flex-1 relative flex justify-center pb-1 lg:pb-0">
         @if (campagneService.campagnes().length > 0) {
           <button (click)="toggleCampagneDropdown()"
                   class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors"
@@ -49,7 +49,7 @@ import { CampagneAgricole } from '../../core/models';
           </button>
 
           @if (showCampagneDropdown()) {
-            <div class="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-72 rounded-xl overflow-hidden z-50 animate-fade-up"
+            <div class="absolute top-full mt-1 left-1/2 -translate-x-1/2 w-72 rounded-xl overflow-hidden z-50 animate-fade-up"
                  style="box-shadow:0 8px 24px rgba(0,0,0,0.15);border:1px solid #e5e7eb;">
               <div style="background:#1a2332;padding:10px 16px;">
                 <span style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:600;">Changer de campagne</span>
@@ -88,7 +88,7 @@ import { CampagneAgricole } from '../../core/models';
       </div>
 
       <!-- Right: actions -->
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 h-10 lg:h-auto">
 
         <!-- Offline badge -->
         @if (!offline.isOnline() || offline.pendingCount() > 0) {
