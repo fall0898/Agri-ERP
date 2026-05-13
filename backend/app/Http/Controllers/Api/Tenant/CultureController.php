@@ -45,6 +45,12 @@ class CultureController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        // Auto-assigner la campagne courante si non fournie
+        if (empty($validated['campagne_id'])) {
+            $campagne = app('tenant')?->campagneCourante();
+            if ($campagne) $validated['campagne_id'] = $campagne->id;
+        }
+
         $culture = Culture::create([
             ...$validated,
             'organisation_id' => $request->user()->organisation_id,

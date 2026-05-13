@@ -49,6 +49,12 @@ class DepenseController extends Controller
             'date_depense' => 'required|date',
         ]);
 
+        // Auto-assigner la campagne courante si non fournie
+        if (empty($validated['campagne_id'])) {
+            $campagne = app('tenant')?->campagneCourante();
+            if ($campagne) $validated['campagne_id'] = $campagne->id;
+        }
+
         $depense = Depense::create([
             ...$validated,
             'organisation_id' => $request->user()->organisation_id,
