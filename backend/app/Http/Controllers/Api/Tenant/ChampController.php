@@ -28,6 +28,10 @@ class ChampController extends Controller
             $query->where('est_actif', filter_var($request->est_actif, FILTER_VALIDATE_BOOLEAN));
         }
 
+        if ($request->filled('campagne_id')) {
+            $query->whereHas('cultures', fn($q) => $q->where('campagne_id', $request->campagne_id));
+        }
+
         $champs = $query->orderBy('nom')->get();
 
         return ChampResource::collection($champs)->response();

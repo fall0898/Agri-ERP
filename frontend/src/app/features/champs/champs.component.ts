@@ -1,8 +1,10 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CampagneService } from '../../core/services/campagne.service';
 import { MediaGalleryComponent } from '../../shared/media-gallery/media-gallery.component';
 
 @Component({
@@ -153,6 +155,13 @@ export class ChampsComponent implements OnInit {
   private notif = inject(NotificationService);
   private fb = inject(FormBuilder);
   auth = inject(AuthService);
+  campagneService = inject(CampagneService);
+
+  constructor() {
+    toObservable(this.campagneService.campagneActive)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.load());
+  }
 
   loading = signal(true);
   saving = signal(false);
@@ -168,11 +177,14 @@ export class ChampsComponent implements OnInit {
     description: [''],
   });
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void { }
 
   load(): void {
     this.loading.set(true);
-    this.api.get<any>('/api/champs').subscribe({
+    const c = this.campagneService.campagneActive();
+    const params: any = {};
+    if (c) params['campagne_id'] = c.id;
+    this.api.get<any>('/api/champs', params).subscribe({
       next: res => {
         this.champs.set(res.data ?? []);
         this.loading.set(false);
