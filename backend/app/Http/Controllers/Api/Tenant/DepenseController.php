@@ -105,7 +105,8 @@ class DepenseController extends Controller
     {
         $builtIn = array_column(CategorieDepenseController::BUILT_IN, 'slug');
         $builtIn[] = 'financement_individuel';
-        $custom = CategorieDepense::where('organisation_id', $request->user()->organisation_id)
+        $custom = CategorieDepense::withoutGlobalScopes()
+            ->where('organisation_id', $request->user()->organisation_id)
             ->pluck('slug')->toArray();
 
         return Rule::in(array_merge($builtIn, $custom));
